@@ -40,22 +40,44 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
         
         if (!botHasReplied && replyingToRef.current !== lastMessage.id) {
           replyingToRef.current = lastMessage.id;
-          addMessageToSession(sessionId, { id: expectedBotMsgId, role: "assistant", content: "", status: "loading", loadingText: loadingStates[0] });
+          addMessageToSession(sessionId, { id: expectedBotMsgId, role: "assistant", content: "", status: "loading", loadingText: "Connecting to Ultron Core..." });
           
-          let step = 0;
-          const interval = setInterval(() => {
-            step++;
-            if (step < loadingStates.length) {
-              updateMessageInSession(sessionId, expectedBotMsgId, { loadingText: loadingStates[step] });
-            } else {
-              clearInterval(interval);
+          const fetchChatStream = async () => {
+            try {
+              updateMessageInSession(sessionId, expectedBotMsgId, { loadingText: "Synthesizing response..." });
+              
+              const response = await fetch("http://localhost:8000/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: lastMessage.content })
+              });
+              
+              if (!response.body) throw new Error("No response body");
+              
+              const reader = response.body.getReader();
+              const decoder = new TextDecoder("utf-8");
+              let fullText = "";
+              
+              updateMessageInSession(sessionId, expectedBotMsgId, { status: "done", content: "" });
+
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                fullText += decoder.decode(value, { stream: true });
+                updateMessageInSession(sessionId, expectedBotMsgId, { content: fullText });
+              }
+              
+            } catch (error) {
+              console.error(error);
               updateMessageInSession(sessionId, expectedBotMsgId, { 
                 status: "done", 
-                content: "This is a simulated response from Drone 1. I am currently operating in standalone UI mode without a backend connection.",
+                content: "Failed to connect to backend server. Make sure the FastAPI python server is running on localhost:8000.",
                 loadingText: undefined
               });
             }
-          }, 1500);
+          };
+
+          fetchChatStream();
         }
       }
     }
@@ -76,12 +98,30 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const newFiles = Array.from(e.target.files).map(f => ({ name: f.name, type: f.type }));
+      const files = Array.from(e.target.files);
+      const newFiles = files.map(f => ({ name: f.name, type: f.type }));
       setAttachments(prev => [...prev, ...newFiles]);
+      setShowAttachMenu(false);
+      
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append("file", file);
+        
+        try {
+          const endpoint = file.name.endsWith('.docx') ? "/upload-template" : "/ingest";
+          await fetch(`http://localhost:8000${endpoint}`, {
+            method: "POST",
+            body: formData,
+          });
+        } catch (error) {
+          console.error("Upload failed", error);
+        }
+      }
+    } else {
+      setShowAttachMenu(false);
     }
-    setShowAttachMenu(false);
   };
 
   const handleSend = () => {

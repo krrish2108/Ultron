@@ -12,8 +12,8 @@ from docx import Document as DocxDocument
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 
-from Services.utils.config import DOC_GEN_MODEL
-from Services.agents.models import DocGenState, PlaceholderValues, BlockContent
+from services.utils.config import DOC_GEN_MODEL
+from services.agents.models import DocGenState, PlaceholderValues, BlockContent
 
 
 PLACEHOLDER_PATTERN = re.compile(r"\{\{\s*([a-zA-Z0-9_]+)\s*\}\}")
