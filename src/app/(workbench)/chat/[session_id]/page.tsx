@@ -292,7 +292,22 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
       {/* Input Area */}
       <div className="p-6 bg-gradient-to-t from-[#030303] via-[#030303] to-transparent w-full shrink-0 relative z-20">
         <div className="max-w-4xl mx-auto">
-          <div className="relative bg-[#0a0a0a] border border-white/10 rounded-2xl flex flex-col p-2 focus-within:border-[#00f0ff]/50 focus-within:shadow-[0_0_20px_rgba(0,240,255,0.1)] transition-all">
+          <div className="relative group w-full">
+            {/* Aurora Glow Effect */}
+            <div className="absolute -inset-[3px] rounded-2xl opacity-30 group-focus-within:opacity-100 blur-xl transition-all duration-700 pointer-events-none">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#00f0ff] via-[#8b5cf6] to-[#00f0ff] bg-[length:200%_auto] animate-[aurora_8s_linear_infinite]" />
+            </div>
+
+            {/* Revolving Electrons */}
+            <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
+              <div className="absolute top-1/2 left-1/2 w-[3000px] h-[3000px] -translate-x-1/2 -translate-y-1/2 animate-[spin_5s_linear_infinite] bg-[conic-gradient(from_0deg,transparent_0%,transparent_30%,#00f0ff_49.5%,#ffffff_50%,transparent_50.5%,transparent_80%,#00f0ff_99.5%,#ffffff_100%)] opacity-100 transition-opacity duration-500" />
+            </div>
+            
+            {/* Inner background to preserve dark input area */}
+            <div className="absolute inset-[1px] bg-[#0a0a0a]/90 backdrop-blur-3xl rounded-[15px] pointer-events-none border border-white/10" />
+
+            {/* Content Container (Not clipped, allows popups) */}
+            <div className="relative z-10 flex flex-col p-3">
             
             {/* Attached Files Display */}
             {attachments.length > 0 && (
@@ -315,11 +330,11 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
             )}
 
             <div className="flex items-end">
-              <div className="relative">
-                <button 
-                  onClick={(e) => { e.stopPropagation(); setShowAttachMenu(!showAttachMenu); }}
-                  className="p-3 text-white/40 hover:text-[#00f0ff] transition-colors rounded-xl hover:bg-white/5"
-                >
+                <div className="relative">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setShowAttachMenu(!showAttachMenu); }}
+                    className="p-3.5 text-white/40 hover:text-[#00f0ff] transition-colors rounded-xl hover:bg-[#00f0ff]/10"
+                  >
                   <Paperclip className="w-5 h-5" />
                 </button>
 
@@ -416,13 +431,13 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                     handleSend();
                   }
                 }}
-                className="flex-1 bg-transparent text-white placeholder:text-white/30 resize-none outline-none py-3.5 px-3 max-h-32 no-scrollbar min-h-[52px] text-base font-light"
+                  className="flex-1 bg-transparent text-white placeholder:text-white/30 resize-none outline-none py-4 px-4 max-h-32 no-scrollbar min-h-[56px] text-[17px] font-light leading-relaxed"
                 rows={1}
               />
                 <div className="relative flex items-center ml-2">
                   <button 
                     onClick={(e) => { e.stopPropagation(); setShowModelMenu(!showModelMenu); }}
-                    className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 rounded-xl transition-all h-[44px]"
+                    className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-xl transition-all h-[50px]"
                   >
                     <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest hidden sm:inline">Model:</span>
                     <span className="text-xs text-white font-mono font-bold">Drone 1</span>
@@ -449,12 +464,13 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
 
                 <button 
                   onClick={handleSend}
-                  className={`h-[44px] px-4 rounded-xl transition-all ml-2 flex shrink-0 items-center justify-center group/btn overflow-hidden relative ${inputText.trim() || attachments.length > 0 ? 'bg-gradient-to-r from-[#00f0ff] to-blue-600 text-black hover:shadow-[0_0_20px_rgba(0,240,255,0.5)] hover:scale-105' : 'bg-white/5 text-white/30'}`}
+                  className={`h-[50px] px-5 rounded-xl transition-all ml-2 flex shrink-0 items-center justify-center group/btn overflow-hidden relative ${inputText.trim() || attachments.length > 0 ? 'bg-gradient-to-r from-[#00f0ff] to-blue-600 text-black hover:shadow-[0_0_20px_rgba(0,240,255,0.5)] hover:scale-105' : 'bg-white/5 text-white/30'}`}
                 >
                   <div className="absolute inset-0 bg-white/20 -skew-x-12 -translate-x-full group-hover/btn:animate-[shimmer_1.5s_infinite]" />
                   <Send className="w-5 h-5 relative z-10" />
                 </button>
               </div>
+            </div>
           </div>
         </div>
       </div>

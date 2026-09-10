@@ -158,14 +158,22 @@ export default function WorkbenchHome() {
           </div>
           
           {/* Animated Input Box */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-            className="relative group"
-          >
-            {/* Glowing Border Background that pulses on hover */}
-            <div className="absolute -inset-[1px] bg-gradient-to-r from-[#00f0ff]/50 via-blue-500/50 to-[#00f0ff]/50 rounded-[1.25rem] opacity-30 group-focus-within:opacity-100 blur-sm transition-opacity duration-500 animate-[shimmer_3s_linear_infinite]" />
+          <div className="relative group w-full">
+            {/* Aurora Glow Effect */}
+            <div className="absolute -inset-[3px] rounded-2xl opacity-30 group-focus-within:opacity-100 blur-xl transition-all duration-700 pointer-events-none">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#00f0ff] via-[#8b5cf6] to-[#00f0ff] bg-[length:200%_auto] animate-[aurora_8s_linear_infinite]" />
+            </div>
+
+            {/* Revolving Electrons */}
+            <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
+              <div className="absolute top-1/2 left-1/2 w-[3000px] h-[3000px] -translate-x-1/2 -translate-y-1/2 animate-[spin_5s_linear_infinite] bg-[conic-gradient(from_0deg,transparent_0%,transparent_30%,#00f0ff_49.5%,#ffffff_50%,transparent_50.5%,transparent_80%,#00f0ff_99.5%,#ffffff_100%)] opacity-100 transition-opacity duration-500" />
+            </div>
             
-            <div className="relative bg-black/80 backdrop-blur-2xl border border-white/10 rounded-2xl flex flex-col p-2 transition-all shadow-2xl">
+            {/* Inner background to preserve dark input area */}
+            <div className="absolute inset-[1px] bg-[#0a0a0a]/90 backdrop-blur-3xl rounded-[15px] pointer-events-none border border-white/10" />
+
+            {/* Content Container (Not clipped, allows popups) */}
+            <div className="relative z-10 flex flex-col p-3">
               
               {/* Attached Files Display */}
               {attachments.length > 0 && (
@@ -191,7 +199,7 @@ export default function WorkbenchHome() {
                 <div className="relative">
                   <button 
                     onClick={(e) => { e.stopPropagation(); setShowAttachMenu(!showAttachMenu); }}
-                    className="p-3 text-white/40 hover:text-[#00f0ff] transition-colors rounded-xl hover:bg-[#00f0ff]/10"
+                    className="p-3.5 text-white/40 hover:text-[#00f0ff] transition-colors rounded-xl hover:bg-[#00f0ff]/10"
                   >
                     <Paperclip className="w-5 h-5" />
                   </button>
@@ -289,13 +297,13 @@ export default function WorkbenchHome() {
                       handleSend();
                     }
                   }}
-                  className="flex-1 bg-transparent text-white placeholder:text-white/30 resize-none outline-none py-3.5 px-3 max-h-32 no-scrollbar min-h-[52px] text-base font-light"
+                  className="flex-1 bg-transparent text-white placeholder:text-white/30 resize-none outline-none py-4 px-4 max-h-32 no-scrollbar min-h-[56px] text-[17px] font-light leading-relaxed"
                   rows={1}
                 />
                 <div className="relative flex items-center ml-2">
                   <button 
                     onClick={(e) => { e.stopPropagation(); setShowModelMenu(!showModelMenu); }}
-                    className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 rounded-xl transition-all h-[44px]"
+                    className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-xl transition-all h-[50px]"
                   >
                     <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest hidden sm:inline">Model:</span>
                     <span className="text-xs text-white font-mono font-bold">Drone 1</span>
@@ -322,14 +330,14 @@ export default function WorkbenchHome() {
 
                 <button 
                   onClick={handleSend}
-                  className="h-[44px] px-4 bg-gradient-to-r from-[#00f0ff] to-blue-600 text-black rounded-xl hover:shadow-[0_0_20px_rgba(0,240,255,0.5)] hover:scale-105 transition-all ml-2 flex shrink-0 items-center justify-center group/btn overflow-hidden relative"
+                  className="h-[50px] px-5 bg-gradient-to-r from-[#00f0ff] to-blue-600 text-black rounded-xl hover:shadow-[0_0_20px_rgba(0,240,255,0.5)] hover:scale-105 transition-all ml-2 flex shrink-0 items-center justify-center group/btn overflow-hidden relative"
                 >
                   <div className="absolute inset-0 bg-white/20 -skew-x-12 -translate-x-full group-hover/btn:animate-[shimmer_1.5s_infinite]" />
                   <Send className="w-5 h-5 relative z-10" />
                 </button>
               </div>
             </div>
-          </motion.div>
+          </div>
 
         </div>
       </div>
