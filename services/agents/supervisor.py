@@ -55,6 +55,16 @@ class Supervisor:
         intent = decision.intent
         print(f"[SUPERVISOR] Intent: {intent} (reason: {decision.reasoning})")
 
+        from services.utils.broadcaster import broadcaster
+        import asyncio
+        asyncio.create_task(broadcaster.broadcast("routingLogic", {
+            "taskType": intent,
+            "selectedModel": getattr(self.llm, "model", "Llama-3-8B"),
+            "reasoning": decision.reasoning
+        }))
+        asyncio.create_task(broadcaster.broadcast("agentTrace", f"> [PLAN] Analyzing intent..."))
+        asyncio.create_task(broadcaster.broadcast("agentTrace", f"  Intent classified: {intent}"))
+
         response = await self._dispatch(intent, message, context, template_path)
 
         # One bounded follow-up: if the agent signals it needs one, honour it.

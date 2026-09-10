@@ -4,27 +4,13 @@ import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Box, FileText, FileImage, FileCode, FileArchive, Download, Trash2, Search, UploadCloud, FolderPlus, Folder, ArrowLeft, X } from "lucide-react";
 
-type Asset = {
-  id: string;
-  name: string;
-  type: string;
-  size: string;
-  date: string;
-  status: string;
-  isFolder?: boolean;
-  folderId?: string | null;
-};
+import { useAppStore, Asset } from "@/store/useAppStore";
 
 export default function AssetsPage() {
-  const [assets, setAssets] = useState<Asset[]>([
-    { id: "f1", name: "Training Data", type: "folder", size: "--", date: "Today, 10:00 AM", status: "Indexed", isFolder: true, folderId: null },
-    { id: "1", name: "architecture_v2.pdf", type: "pdf", size: "4.2 MB", date: "Today, 10:42 AM", status: "Processed", folderId: null },
-    { id: "2", name: "syslog_export.txt", type: "log", size: "1.1 MB", date: "Today, 09:15 AM", status: "Processed", folderId: null },
-    { id: "3", name: "training_data_batch1.csv", type: "data", size: "128.5 MB", date: "Yesterday", status: "Indexed", folderId: "f1" },
-    { id: "4", name: "UI_Mockups.zip", type: "archive", size: "45.0 MB", date: "Oct 24", status: "Scanned", folderId: null },
-    { id: "5", name: "main_controller.py", type: "code", size: "12 KB", date: "Oct 22", status: "Indexed", folderId: null },
-    { id: "6", name: "database_schema.sql", type: "code", size: "8 KB", date: "Oct 21", status: "Indexed", folderId: null },
-  ]);
+  const assets = useAppStore(state => state.assets);
+  const setAssets = useAppStore(state => state.setAssets);
+  const addAsset = useAppStore(state => state.addAsset);
+  const deleteAsset = useAppStore(state => state.deleteAsset);
 
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -46,13 +32,13 @@ export default function AssetsPage() {
         folderId: currentFolderId,
         isFolder: false
       }));
-      setAssets(prev => [...newFiles, ...prev]);
+      setAssets([...newFiles, ...assets]);
     }
   };
 
   const handleCreateFolder = () => {
     if (!newFolderName.trim()) return;
-    setAssets([{
+    addAsset({
       id: `folder-${Date.now()}`,
       name: newFolderName,
       type: "folder",
@@ -61,15 +47,14 @@ export default function AssetsPage() {
       status: "Active",
       isFolder: true,
       folderId: currentFolderId
-    }, ...assets]);
+    });
     setShowCreateFolder(false);
     setNewFolderName("");
   };
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    // Delete the asset and any children if it's a folder
-    setAssets(prev => prev.filter(a => a.id !== id && a.folderId !== id));
+    deleteAsset(id);
   };
 
   const getIcon = (type: string, isFolder?: boolean) => {
@@ -176,7 +161,11 @@ export default function AssetsPage() {
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 + i * 0.05 }}
                   key={asset.id} 
                   onClick={() => {
-                    if (asset.isFolder) setCurrentFolderId(asset.id);
+                    if (asset.isFolder) {
+                      setCurrentFolderId(asset.id);
+                    } else {
+                      window.open(`/${asset.name}`, '_blank');
+                    }
                   }}
                   className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-white/5 transition-colors group cursor-pointer"
                 >
@@ -201,7 +190,12 @@ export default function AssetsPage() {
                     </span>
                     
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-colors" onClick={e => e.stopPropagation()}>
+                      <button className="p-2 hover:bg-white/10 rounded-lg text-white/40 hover:text-white transition-colors" onClick={e => {
+                        e.stopPropagation();
+                        if (!asset.isFolder) {
+                          window.open(`/${asset.name}`, '_blank');
+                        }
+                      }}>
                         <Download className="w-4 h-4" />
                       </button>
                       <button 

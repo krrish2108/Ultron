@@ -2,10 +2,17 @@
 
 import { useState, useRef, useEffect, use } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Paperclip, Send, FileText, Download, FileUp, ImageIcon, Globe, X, ChevronDown, Loader2, BrainCircuit } from "lucide-react";
-import { useAppStore, Message } from "@/store/useAppStore";
+import { Paperclip, Send, FileText, Download, FileUp, ImageIcon, Globe, X, ChevronDown, Loader2, BrainCircuit, Folder } from "lucide-react";
+import { useAppStore, Message, Asset } from "@/store/useAppStore";
 
 
+
+const COMMAND_SNIPPETS = [
+  { id: 's1', command: 'summarize', label: 'Summarize context', text: 'Summarize the attached files and provide key takeaways.' },
+  { id: 's2', command: 'analyze', label: 'Analyze logs', text: 'Analyze the attached logs for any anomalies or security threats.' },
+  { id: 's3', command: 'explain', label: 'Explain simply', text: 'Explain the current architecture/code in simple terms.' },
+  { id: 's4', command: 'report', label: 'Generate report', text: 'Generate a detailed report based on the provided data.' }
+];
 
 export default function ChatSession({ params }: { params: Promise<{ session_id: string }> }) {
   const unwrappedParams = use(params);
@@ -15,12 +22,15 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
   const [attachments, setAttachments] = useState<{name: string, type: string}[]>([]);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [showModelMenu, setShowModelMenu] = useState(false);
+  const [showSlashMenu, setShowSlashMenu] = useState(false);
+  const [slashQuery, setSlashQuery] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replyingToRef = useRef<string | null>(null);
 
   const session = useAppStore(state => state.sessions.find(s => s.id === sessionId));
   const addMessageToSession = useAppStore(state => state.addMessageToSession);
   const updateMessageInSession = useAppStore(state => state.updateMessageInSession);
+  const assets = useAppStore(state => state.assets);
 
   const messages = session?.messages || [];
 
@@ -130,16 +140,51 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
       addMessageToSession(sessionId, newMessage);
       setInputText("");
       setAttachments([]);
+      setShowSlashMenu(false);
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setInputText(val);
+
+    const match = val.match(/(?:\s|^)\/([^\s]*)$/);
+    if (match) {
+      setShowSlashMenu(true);
+      setSlashQuery(match[1]);
+    } else {
+      setShowSlashMenu(false);
+    }
+  };
+
+  const handleSlashSelect = (asset: Asset) => {
+    if (asset.isFolder) {
+      const children = assets.filter(a => a.folderId === asset.id);
+      const newAttachments = children.map(c => ({ name: c.name, type: c.type }));
+      // Also add the folder itself if we want
+      setAttachments(prev => [...prev, { name: asset.name, type: 'folder' }, ...newAttachments]);
+    } else {
+      setAttachments(prev => [...prev, { name: asset.name, type: asset.type }]);
+    }
+    
+    setInputText(prev => prev.replace(/(?:\s|^)\/[^\s]*$/, ' '));
+    setShowSlashMenu(false);
+    setSlashQuery("");
+  };
+
+  const handleSnippetSelect = (snippetText: string) => {
+    setInputText(prev => prev.replace(/(?:\s|^)\/[^\s]*$/, snippetText + ' '));
+    setShowSlashMenu(false);
+    setSlashQuery("");
+  };
+
   return (
-    <div className="flex-1 flex flex-col h-full relative" onClick={() => { setShowAttachMenu(false); setShowModelMenu(false); }}>
+    <div className="flex-1 flex flex-col h-full relative" onClick={() => { setShowAttachMenu(false); setShowModelMenu(false); setShowSlashMenu(false); }}>
       
       {/* Top Header */}
       <div className="h-14 border-b border-white/5 flex items-center justify-between px-6 shrink-0 bg-[#030303]/80 backdrop-blur-md sticky top-0 z-10">
         <h2 className="font-bold text-sm text-white/90 truncate cursor-pointer hover:text-white transition-colors">
-          Analyze telemetry logs
+          {session?.title || "New Chat"}
         </h2>
         <div className="flex items-center gap-3">
           <div className="bg-white/5 border border-white/10 px-2 py-1 rounded text-[10px] font-bold text-white/50 uppercase tracking-wider">
@@ -152,7 +197,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
       </div>
 
       {/* Message Thread */}
-      <div className="flex-1 overflow-y-auto p-6 custom-scrollbar relative">
+      <div className="flex-1 overflow-y-auto p-6 no-scrollbar relative">
         {/* Ambient Glowing Background */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#00f0ff]/5 rounded-full blur-[120px] pointer-events-none opacity-50 animate-pulse" />
         
@@ -281,10 +326,59 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                 onChange={handleFileChange} 
               />
               
+              {/* Slash Command Popup Menu */}
+              <AnimatePresence>
+                {showSlashMenu && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute bottom-full left-0 mb-2 w-72 max-h-64 overflow-y-auto no-scrollbar bg-[#0a0a0a] border border-[#00f0ff]/30 rounded-xl shadow-[0_0_20px_rgba(0,240,255,0.1)] py-2 z-50"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <div className="px-4 py-2 text-xs font-bold text-[#00f0ff] uppercase tracking-wider border-b border-white/5 mb-1 mt-2">
+                      Attach Asset or Folder
+                    </div>
+                    {assets.filter(a => a.name.toLowerCase().includes(slashQuery.toLowerCase())).length === 0 ? (
+                      <div className="px-4 py-3 text-xs text-white/40">No matching assets found.</div>
+                    ) : (
+                      assets.filter(a => a.name.toLowerCase().includes(slashQuery.toLowerCase())).map(asset => (
+                        <button 
+                          key={asset.id}
+                          onClick={() => handleSlashSelect(asset)}
+                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition-colors text-left"
+                        >
+                          {asset.isFolder ? <Folder className="w-4 h-4 text-blue-400 shrink-0" /> : <FileText className="w-4 h-4 text-white/40 shrink-0" />}
+                          <span className="truncate">{asset.name}</span>
+                          <span className="text-[10px] text-white/30 ml-auto shrink-0">{asset.isFolder ? 'Folder' : asset.type}</span>
+                        </button>
+                      ))
+                    )}
+
+                    <div className="px-4 py-2 text-xs font-bold text-[#00f0ff] uppercase tracking-wider border-b border-white/5 mb-1 mt-2">
+                      Quick Snippets
+                    </div>
+                    {COMMAND_SNIPPETS.filter(s => s.command.toLowerCase().includes(slashQuery.toLowerCase())).map(snippet => (
+                      <button 
+                        key={snippet.id}
+                        onClick={() => handleSnippetSelect(snippet.text)}
+                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition-colors text-left"
+                      >
+                        <div className="w-5 h-5 rounded bg-[#00f0ff]/10 flex items-center justify-center shrink-0 border border-[#00f0ff]/20">
+                          <span className="text-[#00f0ff] font-mono text-[10px]">/</span>
+                        </div>
+                        <span className="font-medium truncate">{snippet.command}</span>
+                        <span className="text-[10px] text-white/40 ml-auto shrink-0">{snippet.label}</span>
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            
               <textarea 
-                placeholder="Query the local enclave..." 
+                placeholder="Query the local enclave... (Type '/' for assets)" 
                 value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
+                onChange={handleInputChange}
                 onPaste={handlePaste}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
@@ -292,7 +386,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                     handleSend();
                   }
                 }}
-                className="flex-1 bg-transparent text-white placeholder:text-white/30 resize-none outline-none py-3.5 px-3 max-h-32 custom-scrollbar min-h-[52px] text-base font-light"
+                className="flex-1 bg-transparent text-white placeholder:text-white/30 resize-none outline-none py-3.5 px-3 max-h-32 no-scrollbar min-h-[52px] text-base font-light"
                 rows={1}
               />
                 <div className="relative flex items-center ml-2">

@@ -2,17 +2,27 @@
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Paperclip, Send, BrainCircuit, ChevronDown, Image as ImageIcon, Globe, FileUp, X } from "lucide-react";
+import { Paperclip, Send, BrainCircuit, ChevronDown, Image as ImageIcon, Globe, FileUp, X, Folder, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useAppStore } from "@/store/useAppStore";
+import { useAppStore, Asset } from "@/store/useAppStore";
+
+const COMMAND_SNIPPETS = [
+  { id: 's1', command: 'summarize', label: 'Summarize context', text: 'Summarize the attached files and provide key takeaways.' },
+  { id: 's2', command: 'analyze', label: 'Analyze logs', text: 'Analyze the attached logs for any anomalies or security threats.' },
+  { id: 's3', command: 'explain', label: 'Explain simply', text: 'Explain the current architecture/code in simple terms.' },
+  { id: 's4', command: 'report', label: 'Generate report', text: 'Generate a detailed report based on the provided data.' }
+];
 
 export default function WorkbenchHome() {
   const router = useRouter();
   const createNewSession = useAppStore(state => state.createNewSession);
+  const assets = useAppStore(state => state.assets);
   const [inputText, setInputText] = useState("");
   const [attachments, setAttachments] = useState<{name: string, type: string}[]>([]);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [showModelMenu, setShowModelMenu] = useState(false);
+  const [showSlashMenu, setShowSlashMenu] = useState(false);
+  const [slashQuery, setSlashQuery] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handlePaste = (e: React.ClipboardEvent) => {
@@ -49,8 +59,41 @@ export default function WorkbenchHome() {
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setInputText(val);
+
+    const match = val.match(/(?:\s|^)\/([^\s]*)$/);
+    if (match) {
+      setShowSlashMenu(true);
+      setSlashQuery(match[1]);
+    } else {
+      setShowSlashMenu(false);
+    }
+  };
+
+  const handleSlashSelect = (asset: Asset) => {
+    if (asset.isFolder) {
+      const children = assets.filter(a => a.folderId === asset.id);
+      const newAttachments = children.map(c => ({ name: c.name, type: c.type }));
+      setAttachments(prev => [...prev, { name: asset.name, type: 'folder' }, ...newAttachments]);
+    } else {
+      setAttachments(prev => [...prev, { name: asset.name, type: asset.type }]);
+    }
+    
+    setInputText(prev => prev.replace(/(?:\s|^)\/[^\s]*$/, ' '));
+    setShowSlashMenu(false);
+    setSlashQuery("");
+  };
+
+  const handleSnippetSelect = (snippetText: string) => {
+    setInputText(prev => prev.replace(/(?:\s|^)\/[^\s]*$/, snippetText + ' '));
+    setShowSlashMenu(false);
+    setSlashQuery("");
+  };
+
   return (
-    <div className="flex-1 flex flex-col h-full relative z-10" onClick={() => { setShowAttachMenu(false); setShowModelMenu(false); }}>
+    <div className="flex-1 flex flex-col h-full relative z-10" onClick={() => { setShowAttachMenu(false); setShowModelMenu(false); setShowSlashMenu(false); }}>
       
       {/* Dynamic Background Elements for Empty State */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center z-0">
@@ -186,10 +229,59 @@ export default function WorkbenchHome() {
                   onChange={handleFileChange} 
                 />
                 
+                {/* Slash Command Popup Menu */}
+                <AnimatePresence>
+                  {showSlashMenu && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute bottom-full left-0 mb-2 w-72 max-h-64 overflow-y-auto no-scrollbar bg-[#0a0a0a] border border-[#00f0ff]/30 rounded-xl shadow-[0_0_20px_rgba(0,240,255,0.1)] py-2 z-50"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <div className="px-4 py-2 text-xs font-bold text-[#00f0ff] uppercase tracking-wider border-b border-white/5 mb-1 mt-2">
+                        Attach Asset or Folder
+                      </div>
+                      {assets.filter(a => a.name.toLowerCase().includes(slashQuery.toLowerCase())).length === 0 ? (
+                        <div className="px-4 py-3 text-xs text-white/40">No matching assets found.</div>
+                      ) : (
+                        assets.filter(a => a.name.toLowerCase().includes(slashQuery.toLowerCase())).map(asset => (
+                          <button 
+                            key={asset.id}
+                            onClick={() => handleSlashSelect(asset)}
+                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition-colors text-left"
+                          >
+                            {asset.isFolder ? <Folder className="w-4 h-4 text-blue-400 shrink-0" /> : <FileText className="w-4 h-4 text-white/40 shrink-0" />}
+                            <span className="truncate">{asset.name}</span>
+                            <span className="text-[10px] text-white/30 ml-auto shrink-0">{asset.isFolder ? 'Folder' : asset.type}</span>
+                          </button>
+                        ))
+                      )}
+
+                      <div className="px-4 py-2 text-xs font-bold text-[#00f0ff] uppercase tracking-wider border-b border-white/5 mb-1 mt-2">
+                        Quick Snippets
+                      </div>
+                      {COMMAND_SNIPPETS.filter(s => s.command.toLowerCase().includes(slashQuery.toLowerCase())).map(snippet => (
+                        <button 
+                          key={snippet.id}
+                          onClick={() => handleSnippetSelect(snippet.text)}
+                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition-colors text-left"
+                        >
+                          <div className="w-5 h-5 rounded bg-[#00f0ff]/10 flex items-center justify-center shrink-0 border border-[#00f0ff]/20">
+                            <span className="text-[#00f0ff] font-mono text-[10px]">/</span>
+                          </div>
+                          <span className="font-medium truncate">{snippet.command}</span>
+                          <span className="text-[10px] text-white/40 ml-auto shrink-0">{snippet.label}</span>
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 <textarea 
-                  placeholder="Query the local enclave..." 
+                  placeholder="Query the local enclave... (Type '/' for assets)" 
                   value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
+                  onChange={handleInputChange}
                   onPaste={handlePaste}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -197,7 +289,7 @@ export default function WorkbenchHome() {
                       handleSend();
                     }
                   }}
-                  className="flex-1 bg-transparent text-white placeholder:text-white/30 resize-none outline-none py-3.5 px-3 max-h-32 custom-scrollbar min-h-[52px] text-base font-light"
+                  className="flex-1 bg-transparent text-white placeholder:text-white/30 resize-none outline-none py-3.5 px-3 max-h-32 no-scrollbar min-h-[52px] text-base font-light"
                   rows={1}
                 />
                 <div className="relative flex items-center ml-2">
