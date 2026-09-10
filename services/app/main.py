@@ -13,8 +13,8 @@ from pathlib import Path as FilePath
 import tempfile
 import os
 from contextlib import asynccontextmanager
-from Services.utils.ingest import ingest_document, chunk_document
-from Services.utils.config import QDRANT_HOST, QDRANT_PORT
+from utils.ingest import ingest_document, chunk_document
+from utils.config import QDRANT_HOST, QDRANT_PORT
 
 
 
@@ -88,7 +88,7 @@ async def chat(request: Request, message: dict):
     # Prefer request state over body (allows body override for advanced use cases)
     template_path = message.get("template_path") or getattr(request.app.state, "template_path", None)
     
-    from Services.agents.supervisor import Supervisor
+    from agents.supervisor import Supervisor
     supervisor = Supervisor()
     
     async def generate():
