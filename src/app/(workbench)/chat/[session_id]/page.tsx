@@ -224,7 +224,53 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                   </div>
                 ) : (
                   <>
-                    <p className={`text-[15px] leading-relaxed mb-1 ${msg.role === 'user' ? 'text-black/90' : 'text-white/80 font-light tracking-wide'}`}>{msg.content}</p>
+                    {(() => {
+                      const fileMatch = msg.content.match(/\n\nFile: (.*)$/);
+                      const textContent = fileMatch ? msg.content.replace(fileMatch[0], '') : msg.content;
+                      const generatedFile = fileMatch ? fileMatch[1] : null;
+                      const fileName = generatedFile ? generatedFile.split(/[/\\]/).pop() || "Document" : "";
+
+                      return (
+                        <>
+                          <p className={`text-[15px] leading-relaxed mb-1 ${msg.role === 'user' ? 'text-black/90' : 'text-white/80 font-light tracking-wide whitespace-pre-wrap'}`}>{textContent}</p>
+                          {generatedFile && (
+                            <div className="bg-[#030303] border border-[#00f0ff]/30 rounded-xl p-4 flex flex-col gap-4 mt-4 hover:border-[#00f0ff] transition-colors group relative overflow-hidden">
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#00f0ff]/5 to-transparent -translate-x-[100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-lg bg-[#00f0ff]/10 flex items-center justify-center shrink-0 shadow-[0_0_10px_rgba(0,240,255,0.2)]">
+                                    <FileText className="w-5 h-5 text-[#00f0ff]" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="text-sm font-bold text-white group-hover:text-[#00f0ff] transition-colors truncate max-w-[200px]" title={fileName}>{fileName}</div>
+                                    <div className="text-[10px] text-white/40 uppercase tracking-wider font-bold">Generated Artifact</div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <button onClick={() => {
+                                      useAppStore.getState().addAsset({
+                                        id: Date.now().toString(),
+                                        name: fileName,
+                                        type: "document",
+                                        size: "--",
+                                        date: "Just now",
+                                        status: "Saved",
+                                      });
+                                    }} 
+                                    className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-medium text-white/70 hover:text-white hover:border-white/30 transition-all flex items-center gap-2 whitespace-nowrap"
+                                  >
+                                    <Folder className="w-3.5 h-3.5" /> Save to Assets
+                                  </button>
+                                  <a href={`http://localhost:8000/download?path=${encodeURIComponent(generatedFile)}`} download className="w-8 h-8 rounded-full bg-[#00f0ff]/10 flex items-center justify-center hover:bg-[#00f0ff]/20 text-[#00f0ff] shadow-[0_0_10px_rgba(0,240,255,0.2)] transition-all shrink-0">
+                                    <Download className="w-4 h-4" />
+                                  </a>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                     {msg.attachments && msg.attachments.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-2">
                         {msg.attachments.map((file, idx) => (
@@ -232,22 +278,6 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                             <FileUp className="w-3 h-3" /> {file.name}
                           </div>
                         ))}
-                      </div>
-                    )}
-                    {msg.id === "2" && (
-                      <div className="bg-[#030303] border border-[#00f0ff]/30 rounded-xl p-3 flex items-center justify-between mt-4 hover:border-[#00f0ff] transition-colors group cursor-default">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-[#00f0ff]/10 flex items-center justify-center shrink-0">
-                            <FileText className="w-5 h-5 text-[#00f0ff]" />
-                          </div>
-                          <div>
-                            <div className="text-sm font-bold text-white group-hover:text-[#00f0ff] transition-colors truncate">Security_Report.pdf</div>
-                            <div className="text-[10px] text-white/40 uppercase tracking-wider font-bold">Encrypted PDF &middot; 24 KB</div>
-                          </div>
-                        </div>
-                        <button className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 text-white/50 hover:text-white transition-all shrink-0">
-                          <Download className="w-4 h-4" />
-                        </button>
                       </div>
                     )}
                   </>

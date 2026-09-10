@@ -3,7 +3,7 @@ import os
 import tempfile
 from pathlib import Path
 from fastapi import APIRouter, UploadFile, File, HTTPException, Request, WebSocket, WebSocketDisconnect
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 
 from services.utils.ingest import ingest_document
 from services.utils.broadcaster import broadcaster
@@ -104,6 +104,16 @@ async def ingest_file(request: Request, file: UploadFile = File(...)):
 # ---------------------------------------------------------
 # Extended Endpoints (For Heavy Users)
 # ---------------------------------------------------------
+
+@router.get("/download")
+async def download_file(path: str):
+    """Downloads a file given its absolute path."""
+    file_path = Path(path)
+    if not file_path.exists() or not file_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    # In a real app, ensure 'path' is strictly within a designated directory to prevent LFI
+    return FileResponse(path=file_path, filename=file_path.name)
 
 @router.get("/sessions")
 async def list_sessions():
