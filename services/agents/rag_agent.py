@@ -411,9 +411,15 @@ class RAGAgent:
                 "markdown": "",
             }
 
+            from services.utils.broadcaster import broadcaster
+            import asyncio
+            asyncio.create_task(broadcaster.broadcast("agentTrace", f"> [ACT] Executing RAG Search for '{query}'..."))
+
             final_state = await self.graph.ainvoke(initial_state)
 
             chunks = final_state.get("chunks", [])
+            asyncio.create_task(broadcaster.broadcast("agentTrace", f"  Retrieved {len(chunks)} chunks from Vector DB."))
+            asyncio.create_task(broadcaster.broadcast("agentTrace", "> [PLAN] Synthesizing response..."))
             answer = final_state.get("answer", "")
             context = final_state.get("context", "")
             sources = final_state.get("sources", [])

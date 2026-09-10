@@ -144,6 +144,14 @@
   .animate-\[shimmer_1\.5s_infinite\] {
     animation: shimmer 1.5s infinite;
   }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 @keyframes shimmer {

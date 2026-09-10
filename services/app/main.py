@@ -6,15 +6,12 @@ project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path and project_root.exists():
     sys.path.insert(0, str(project_root))
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, Request
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path as FilePath
-import tempfile
-import os
 from contextlib import asynccontextmanager
-from services.utils.ingest import ingest_document, chunk_document
-from services.utils.config import QDRANT_HOST, QDRANT_PORT
+
+from services.app.routes import router
 
 
 
@@ -75,84 +72,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-@app.get("/")
-def read_root():
-    return {"status": "ok", "message": "Backend is running"}
-
-
-@app.post("/chat")
-async def chat(request: Request, message: dict):
-    user_message = message.get("message", "")
-    context = message.get("context", "")
-    # Prefer request state over body (allows body override for advanced use cases)
-    template_path = message.get("template_path") or getattr(request.app.state, "template_path", None)
-    
-    from services.agents.supervisor import Supervisor
-    supervisor = Supervisor()
-    
-    async def generate():
-        try:
-            result = await supervisor.route(user_message, context, template_path=template_path)
-            content = result.content
-            if result.file_path:
-                content += f"\n\nFile: {result.file_path}"
-            for chunk in content.split():
-                yield chunk + " "
-        except Exception as e:
-            print(f"[CHAT ERROR] {e}")
-            yield f"Error: {str(e)}"
-    
-    return StreamingResponse(generate(), media_type="text/plain")
-
-@app.post("/upload-template")
-async def upload_template(request: Request, file: UploadFile = File(...)):
-    """Saves a DOCX file to use as the template for document generation."""
-    if not file.filename or not file.filename.lower().endswith(".docx"):
-        raise HTTPException(status_code=400, detail="Template must be a .docx file")
-
-    data_dir = project_root / "data"
-    data_dir.mkdir(exist_ok=True)
-    template_path = data_dir / "template.docx"
-
-    content = await file.read()
-    template_path.write_bytes(content)
-
-    # Store in app state so future chat requests pick it up automatically
-    request.app.state.template_path = str(template_path)
-    
-    print(f"[TEMPLATE] Saved {len(content)} bytes to {template_path}")
-    return {"status": "ok", "filename": file.filename, "path": str(template_path)}
-
-
-@app.post("/ingest")
-async def ingest_file(request: Request, file: UploadFile = File(...)):
-    """Ingests document, saves to vector DB and context.md. Returns minimal."""
-    with tempfile.NamedTemporaryFile(delete=False, suffix=FilePath(str(file.filename)).suffix) as temp_file:
-        content = await file.read()
-        temp_file.write(content)
-        temp_path = temp_file.name
-
-    try:
-        doc = await asyncio.to_thread(ingest_document, temp_path, request.app.state.converter)
-        markdown = doc.export_to_markdown()
-        
-        # Save to data/context.md (ensures uvicorn doesn't reload if data/ is ignored)
-        data_dir = project_root / "data"
-        data_dir.mkdir(exist_ok=True)
-        context_path = data_dir / "context.md"
-        context_path.write_text(markdown, encoding="utf-8")
-        print(f"[INGEST] Saved {len(markdown)} chars to {context_path}")
-        
-        
-        return {"status": "ok", "filename": file.filename}
-    except Exception as e:
-        print(f"[INGEST ERROR] {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
-
+app.include_router(router)
 
 if __name__ == "__main__":
     import uvicorn
