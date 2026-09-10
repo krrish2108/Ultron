@@ -1,0 +1,35 @@
+[project]
+name = "doom-prototype"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pyright>=1.1.411",
+    "streamlit>=1.39.0",
+    "qdrant-client>=1.13.0",
+    "fastembed>=0.5.0",
+    "langgraph>=0.2.0",
+    "langchain-ollama>=0.2.0",
+    "langchain-core>=0.3.0",
+    "fastapi>=0.141.1",
+    "pypandoc>=1.17",
+    "torch>=2.14.0",
+    "torchvision>=0.29.0",
+    "torchaudio>=2.11.0",
+    "docling>=2.126.0",
+    "ipykernel>=7.3.0",
+    "easyocr>=1.7.2",
+    "rapidocr>=3.9.2",
+    "onnxruntime>=1.29.0",
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu130" }
+torchvision = { index = "pytorch-cu130" }
+torchaudio = { index = "pytorch-cu130" }

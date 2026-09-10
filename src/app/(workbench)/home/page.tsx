@@ -2,17 +2,27 @@
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Paperclip, Send, BrainCircuit, ChevronDown, Image as ImageIcon, Globe, FileUp, X } from "lucide-react";
+import { Paperclip, Send, BrainCircuit, ChevronDown, Image as ImageIcon, Globe, FileUp, X, Folder, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useAppStore } from "@/store/useAppStore";
+import { useAppStore, Asset } from "@/store/useAppStore";
+
+const COMMAND_SNIPPETS = [
+  { id: 's1', command: 'summarize', label: 'Summarize context', text: 'Summarize the attached files and provide key takeaways.' },
+  { id: 's2', command: 'analyze', label: 'Analyze logs', text: 'Analyze the attached logs for any anomalies or security threats.' },
+  { id: 's3', command: 'explain', label: 'Explain simply', text: 'Explain the current architecture/code in simple terms.' },
+  { id: 's4', command: 'report', label: 'Generate report', text: 'Generate a detailed report based on the provided data.' }
+];
 
 export default function WorkbenchHome() {
   const router = useRouter();
   const createNewSession = useAppStore(state => state.createNewSession);
+  const assets = useAppStore(state => state.assets);
   const [inputText, setInputText] = useState("");
   const [attachments, setAttachments] = useState<{name: string, type: string}[]>([]);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [showModelMenu, setShowModelMenu] = useState(false);
+  const [showSlashMenu, setShowSlashMenu] = useState(false);
+  const [slashQuery, setSlashQuery] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handlePaste = (e: React.ClipboardEvent) => {
@@ -49,8 +59,41 @@ export default function WorkbenchHome() {
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setInputText(val);
+
+    const match = val.match(/(?:\s|^)\/([^\s]*)$/);
+    if (match) {
+      setShowSlashMenu(true);
+      setSlashQuery(match[1]);
+    } else {
+      setShowSlashMenu(false);
+    }
+  };
+
+  const handleSlashSelect = (asset: Asset) => {
+    if (asset.isFolder) {
+      const children = assets.filter(a => a.folderId === asset.id);
+      const newAttachments = children.map(c => ({ name: c.name, type: c.type }));
+      setAttachments(prev => [...prev, { name: asset.name, type: 'folder' }, ...newAttachments]);
+    } else {
+      setAttachments(prev => [...prev, { name: asset.name, type: asset.type }]);
+    }
+    
+    setInputText(prev => prev.replace(/(?:\s|^)\/[^\s]*$/, ' '));
+    setShowSlashMenu(false);
+    setSlashQuery("");
+  };
+
+  const handleSnippetSelect = (snippetText: string) => {
+    setInputText(prev => prev.replace(/(?:\s|^)\/[^\s]*$/, snippetText + ' '));
+    setShowSlashMenu(false);
+    setSlashQuery("");
+  };
+
   return (
-    <div className="flex-1 flex flex-col h-full relative z-10" onClick={() => { setShowAttachMenu(false); setShowModelMenu(false); }}>
+    <div className="flex-1 flex flex-col h-full relative z-10" onClick={() => { setShowAttachMenu(false); setShowModelMenu(false); setShowSlashMenu(false); }}>
       
       {/* Dynamic Background Elements for Empty State */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center z-0">
@@ -115,14 +158,22 @@ export default function WorkbenchHome() {
           </div>
           
           {/* Animated Input Box */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
-            className="relative group"
-          >
-            {/* Glowing Border Background that pulses on hover */}
-            <div className="absolute -inset-[1px] bg-gradient-to-r from-[#00f0ff]/50 via-blue-500/50 to-[#00f0ff]/50 rounded-[1.25rem] opacity-30 group-focus-within:opacity-100 blur-sm transition-opacity duration-500 animate-[shimmer_3s_linear_infinite]" />
+          <div className="relative group w-full">
+            {/* Aurora Glow Effect */}
+            <div className="absolute -inset-[3px] rounded-2xl opacity-30 group-focus-within:opacity-100 blur-xl transition-all duration-700 pointer-events-none">
+              <div className="absolute inset-0 bg-gradient-to-r from-[#00f0ff] via-[#8b5cf6] to-[#00f0ff] bg-[length:200%_auto] animate-[aurora_8s_linear_infinite]" />
+            </div>
+
+            {/* Revolving Electrons */}
+            <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
+              <div className="absolute top-1/2 left-1/2 w-[3000px] h-[3000px] -translate-x-1/2 -translate-y-1/2 animate-[spin_5s_linear_infinite] bg-[conic-gradient(from_0deg,transparent_0%,transparent_30%,#00f0ff_49.5%,#ffffff_50%,transparent_50.5%,transparent_80%,#00f0ff_99.5%,#ffffff_100%)] opacity-100 transition-opacity duration-500" />
+            </div>
             
-            <div className="relative bg-black/80 backdrop-blur-2xl border border-white/10 rounded-2xl flex flex-col p-2 transition-all shadow-2xl">
+            {/* Inner background to preserve dark input area */}
+            <div className="absolute inset-[1px] bg-[#0a0a0a]/90 backdrop-blur-3xl rounded-[15px] pointer-events-none border border-white/10" />
+
+            {/* Content Container (Not clipped, allows popups) */}
+            <div className="relative z-10 flex flex-col p-3">
               
               {/* Attached Files Display */}
               {attachments.length > 0 && (
@@ -148,7 +199,7 @@ export default function WorkbenchHome() {
                 <div className="relative">
                   <button 
                     onClick={(e) => { e.stopPropagation(); setShowAttachMenu(!showAttachMenu); }}
-                    className="p-3 text-white/40 hover:text-[#00f0ff] transition-colors rounded-xl hover:bg-[#00f0ff]/10"
+                    className="p-3.5 text-white/40 hover:text-[#00f0ff] transition-colors rounded-xl hover:bg-[#00f0ff]/10"
                   >
                     <Paperclip className="w-5 h-5" />
                   </button>
@@ -186,10 +237,59 @@ export default function WorkbenchHome() {
                   onChange={handleFileChange} 
                 />
                 
+                {/* Slash Command Popup Menu */}
+                <AnimatePresence>
+                  {showSlashMenu && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute bottom-full left-0 mb-2 w-72 max-h-64 overflow-y-auto no-scrollbar bg-[#0a0a0a] border border-[#00f0ff]/30 rounded-xl shadow-[0_0_20px_rgba(0,240,255,0.1)] py-2 z-50"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <div className="px-4 py-2 text-xs font-bold text-[#00f0ff] uppercase tracking-wider border-b border-white/5 mb-1 mt-2">
+                        Attach Asset or Folder
+                      </div>
+                      {assets.filter(a => a.name.toLowerCase().includes(slashQuery.toLowerCase())).length === 0 ? (
+                        <div className="px-4 py-3 text-xs text-white/40">No matching assets found.</div>
+                      ) : (
+                        assets.filter(a => a.name.toLowerCase().includes(slashQuery.toLowerCase())).map(asset => (
+                          <button 
+                            key={asset.id}
+                            onClick={() => handleSlashSelect(asset)}
+                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition-colors text-left"
+                          >
+                            {asset.isFolder ? <Folder className="w-4 h-4 text-blue-400 shrink-0" /> : <FileText className="w-4 h-4 text-white/40 shrink-0" />}
+                            <span className="truncate">{asset.name}</span>
+                            <span className="text-[10px] text-white/30 ml-auto shrink-0">{asset.isFolder ? 'Folder' : asset.type}</span>
+                          </button>
+                        ))
+                      )}
+
+                      <div className="px-4 py-2 text-xs font-bold text-[#00f0ff] uppercase tracking-wider border-b border-white/5 mb-1 mt-2">
+                        Quick Snippets
+                      </div>
+                      {COMMAND_SNIPPETS.filter(s => s.command.toLowerCase().includes(slashQuery.toLowerCase())).map(snippet => (
+                        <button 
+                          key={snippet.id}
+                          onClick={() => handleSnippetSelect(snippet.text)}
+                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition-colors text-left"
+                        >
+                          <div className="w-5 h-5 rounded bg-[#00f0ff]/10 flex items-center justify-center shrink-0 border border-[#00f0ff]/20">
+                            <span className="text-[#00f0ff] font-mono text-[10px]">/</span>
+                          </div>
+                          <span className="font-medium truncate">{snippet.command}</span>
+                          <span className="text-[10px] text-white/40 ml-auto shrink-0">{snippet.label}</span>
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 <textarea 
-                  placeholder="Query the local enclave..." 
+                  placeholder="Query the local enclave... (Type '/' for assets)" 
                   value={inputText}
-                  onChange={(e) => setInputText(e.target.value)}
+                  onChange={handleInputChange}
                   onPaste={handlePaste}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -197,13 +297,13 @@ export default function WorkbenchHome() {
                       handleSend();
                     }
                   }}
-                  className="flex-1 bg-transparent text-white placeholder:text-white/30 resize-none outline-none py-3.5 px-3 max-h-32 custom-scrollbar min-h-[52px] text-base font-light"
+                  className="flex-1 bg-transparent text-white placeholder:text-white/30 resize-none outline-none py-4 px-4 max-h-32 no-scrollbar min-h-[56px] text-[17px] font-light leading-relaxed"
                   rows={1}
                 />
                 <div className="relative flex items-center ml-2">
                   <button 
                     onClick={(e) => { e.stopPropagation(); setShowModelMenu(!showModelMenu); }}
-                    className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 rounded-xl transition-all h-[44px]"
+                    className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-xl transition-all h-[50px]"
                   >
                     <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest hidden sm:inline">Model:</span>
                     <span className="text-xs text-white font-mono font-bold">Drone 1</span>
@@ -230,14 +330,14 @@ export default function WorkbenchHome() {
 
                 <button 
                   onClick={handleSend}
-                  className="h-[44px] px-4 bg-gradient-to-r from-[#00f0ff] to-blue-600 text-black rounded-xl hover:shadow-[0_0_20px_rgba(0,240,255,0.5)] hover:scale-105 transition-all ml-2 flex shrink-0 items-center justify-center group/btn overflow-hidden relative"
+                  className="h-[50px] px-5 bg-gradient-to-r from-[#00f0ff] to-blue-600 text-black rounded-xl hover:shadow-[0_0_20px_rgba(0,240,255,0.5)] hover:scale-105 transition-all ml-2 flex shrink-0 items-center justify-center group/btn overflow-hidden relative"
                 >
                   <div className="absolute inset-0 bg-white/20 -skew-x-12 -translate-x-full group-hover/btn:animate-[shimmer_1.5s_infinite]" />
                   <Send className="w-5 h-5 relative z-10" />
                 </button>
               </div>
             </div>
-          </motion.div>
+          </div>
 
         </div>
       </div>

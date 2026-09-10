@@ -25,8 +25,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="en"
       className={`${fontSans.variable} ${fontMono.variable} h-full antialiased dark font-sans`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      <body className="min-h-full flex flex-col bg-background text-foreground" suppressHydrationWarning>
         <ParticleCursor />
         <Providers>
           {children}

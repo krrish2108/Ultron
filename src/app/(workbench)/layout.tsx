@@ -23,27 +23,14 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
     { id: "d2", title: "architecture_v2.pdf", type: "pdf" },
   ];
 
-  // Dynamic Terminal Logs
-  const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
-  const fullLogs = [
-    "// Ultron OS v2.4.1",
-    "> [PLAN] Analyzing intent...",
-    "  Intent classified: Network_Scan",
-    "> [ACT] Executing read_syslog",
-    "  Parsed 14,204 lines.",
-    "> [OBSERVE] Warning: Anomaly found at port 443",
-    "> [PLAN] Generating report..."
-  ];
+  const connectTransparencyWS = useAppStore(state => state.connectTransparencyWS);
+  const terminalLogs = useAppStore(state => state.transparency.agentTrace);
+  const routingLogic = useAppStore(state => state.transparency.routingLogic);
+  const networkStatus = useAppStore(state => state.transparency.networkStatus);
 
   useEffect(() => {
-    let i = 0;
-    const interval = setInterval(() => {
-      setTerminalLogs(fullLogs.slice(0, i + 1));
-      i = (i + 1) % fullLogs.length;
-      if (i === 0) setTerminalLogs([]); // Reset for endless loop
-    }, 1500);
-    return () => clearInterval(interval);
-  }, []);
+    connectTransparencyWS();
+  }, [connectTransparencyWS]);
 
   const renderStatusDot = (status: string) => {
     switch (status) {
@@ -130,7 +117,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
             </div>
 
             {/* Search and Sessions */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden px-2 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden px-2 no-scrollbar">
               
               <div className="flex items-center justify-between px-4 mt-2 mb-2 text-white/40 hover:text-white transition-colors group cursor-pointer">
                 <h3 className="text-xs font-semibold">Tasks and logs</h3>
@@ -252,14 +239,14 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5 space-y-8 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-5 space-y-8 no-scrollbar">
               
               {/* Agent Trace */}
               <div className="space-y-3">
                 <h3 className="text-[10px] font-bold text-[#00f0ff] uppercase tracking-widest flex items-center gap-2">
                   <Terminal className="w-3.5 h-3.5" /> Agent Trace
                 </h3>
-                <div className="bg-black/60 border border-white/10 rounded-xl p-4 font-mono text-[10px] leading-relaxed text-white/60 h-48 overflow-y-auto custom-scrollbar shadow-inner relative">
+                <div className="bg-black/60 border border-white/10 rounded-xl p-4 font-mono text-[10px] leading-relaxed text-white/60 h-48 overflow-y-auto no-scrollbar shadow-inner relative">
                   <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_0%,rgba(0,240,255,0.05)_50%,transparent_100%)] bg-[length:100%_4px] animate-[scan_2s_linear_infinite] pointer-events-none opacity-50" />
                   {terminalLogs.map((log, idx) => {
                     let colorClass = "text-white/60";
@@ -279,19 +266,25 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
                   <BrainCircuit className="w-3.5 h-3.5" /> Auto-Routing Logic
                 </h3>
                 <div className="bg-black/40 border border-white/10 rounded-xl p-4 space-y-3 hover:border-white/20 hover:bg-white/5 transition-all">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-white/60">Task Type</span>
-                    <span className="text-xs font-bold text-[#00f0ff]">Analysis</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-white/60">Selected Model</span>
-                    <span className="text-xs font-mono text-black font-bold bg-[#3b82f6] px-2 py-0.5 rounded shadow-[0_0_10px_rgba(59,130,246,0.5)]">Llama-3-8B</span>
-                  </div>
-                  <div className="pt-3 mt-3 border-t border-white/10">
-                    <span className="text-xs text-white/50 leading-relaxed block">
-                      Reasoning: Task requires high context window but no web egress. Local 8B quantized model is optimal for speed/VRAM ratio.
-                    </span>
-                  </div>
+                  {routingLogic ? (
+                    <>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-white/60">Task Type</span>
+                        <span className="text-xs font-bold text-[#00f0ff]">{routingLogic.taskType}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-white/60">Selected Model</span>
+                        <span className="text-xs font-mono text-black font-bold bg-[#3b82f6] px-2 py-0.5 rounded shadow-[0_0_10px_rgba(59,130,246,0.5)]">{routingLogic.selectedModel}</span>
+                      </div>
+                      <div className="pt-3 mt-3 border-t border-white/10">
+                        <span className="text-xs text-white/50 leading-relaxed block">
+                          Reasoning: {routingLogic.reasoning}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-xs text-white/40 italic text-center py-2">Waiting for task...</div>
+                  )}
                 </div>
               </div>
 

@@ -165,7 +165,7 @@ export default function LandingPage() {
             className="flex items-center gap-3"
           >
             <div className="w-10 h-10 rounded-lg overflow-hidden flex items-center justify-center shadow-[0_0_20px_rgba(0,240,255,0.3)] border border-white/10">
-              <Image src="/logo.jpeg" alt="Ultron Logo" width={40} height={40} className="w-full h-full object-cover" />
+              <Image src="/logo.jpeg" alt="Ultron Logo" width={40} height={40} className="w-full h-full object-cover" suppressHydrationWarning />
             </div>
             <span className="font-extrabold text-xl tracking-widest text-white">ULTRON</span>
           </motion.div>
