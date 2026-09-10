@@ -13,8 +13,8 @@ from pathlib import Path as FilePath
 import tempfile
 import os
 from contextlib import asynccontextmanager
-from utils.ingest import ingest_document, chunk_document
-from utils.config import QDRANT_HOST, QDRANT_PORT
+from services.utils.ingest import ingest_document, chunk_document
+from services.utils.config import QDRANT_HOST, QDRANT_PORT
 
 
 
@@ -31,7 +31,7 @@ def startup_docling():
     pipeline_options = PdfPipelineOptions()
     pipeline_options.accelerator_options = AcceleratorOptions(
         num_threads=8,
-        device=AcceleratorDevice.CUDA,
+        device=AcceleratorDevice.AUTO,
     )
 
     pipeline_options.do_ocr = True
@@ -88,7 +88,7 @@ async def chat(request: Request, message: dict):
     # Prefer request state over body (allows body override for advanced use cases)
     template_path = message.get("template_path") or getattr(request.app.state, "template_path", None)
     
-    from agents.supervisor import Supervisor
+    from services.agents.supervisor import Supervisor
     supervisor = Supervisor()
     
     async def generate():

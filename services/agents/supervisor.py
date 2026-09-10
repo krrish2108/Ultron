@@ -3,8 +3,8 @@ from typing_extensions import Literal
 
 from langchain_ollama import ChatOllama
 
-from Services.utils.config import LLM_REASONING, ROUTER_MODEL
-from Services.agents.models import AgentResponse
+from services.utils.config import LLM_REASONING, ROUTER_MODEL
+from services.agents.models import AgentResponse
 
 
 class RouteDecision(BaseModel):
@@ -71,12 +71,12 @@ class Supervisor:
     ) -> AgentResponse:
         """Run the agent for the given intent and return its AgentResponse."""
         if intent == "rag":
-            from Services.agents.rag_agent import RAGAgent
+            from services.agents.rag_agent import RAGAgent
             agent = RAGAgent()
             return await agent.run(message)
 
         elif intent == "doc_gen":
-            from Services.agents.doc_gen_agent import DocGenAgent
+            from services.agents.doc_gen_agent import DocGenAgent
             agent = DocGenAgent()
             return await agent.run(message, context, template_path=template_path)
 

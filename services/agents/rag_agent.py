@@ -1,12 +1,12 @@
-from Services.agents.models import AgentResponse
+from services.agents.models import AgentResponse
 from pathlib import Path
 from typing import TypedDict
 from langgraph.graph import StateGraph, END
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 
-from Services.utils.config import QDRANT_HOST, QDRANT_PORT, LLM_MODEL
-from Services.utils.vector_db import QdrantStorage
+from services.utils.config import QDRANT_HOST, QDRANT_PORT, LLM_MODEL
+from services.utils.vector_db import QdrantStorage
 
 # Define the search tool
 def search_knowledge_base(query: str) -> str:
