@@ -40,6 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+
+
 # Python
 __pycache__/
 *.py[cod]
@@ -50,3 +52,4 @@ venv/
 # Data
 data/context.md
 
+models*
