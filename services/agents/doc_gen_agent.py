@@ -9,7 +9,7 @@ from langgraph.graph import StateGraph, END
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 
-from services.agents.models import AgentResponse, DocGenState, Section, Sections
+from .models import AgentResponse, DocGenState, Section, Sections
 from services.utils.config import DOC_GEN_MODEL, LLM_MODEL
 from services.utils.chunking import chunk_markdown
 from services.utils.template_utils import (
