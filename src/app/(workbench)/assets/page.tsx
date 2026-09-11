@@ -20,19 +20,47 @@ export default function AssetsPage() {
   const currentAssets = assets.filter(a => a.folderId === currentFolderId);
   const currentFolder = assets.find(a => a.id === currentFolderId);
 
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const newFiles = Array.from(e.target.files).map((f, i) => ({
+      const files = Array.from(e.target.files);
+      const newFiles = files.map((f, i) => ({
         id: `uploaded-${Date.now()}-${i}`,
         name: f.name,
         type: f.name.split('.').pop() || "unknown",
         size: (f.size / 1024 / 1024).toFixed(1) + " MB",
         date: "Just now",
-        status: "Processing",
+        status: "Uploading",
         folderId: currentFolderId,
         isFolder: false
       }));
       setAssets([...newFiles, ...assets]);
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const assetId = newFiles[i].id;
+        try {
+          const formData = new FormData();
+          formData.append("file", file);
+
+          const res = await fetch("http://localhost:8000/upload_to_rag", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!res.ok) throw new Error("Upload failed");
+
+          const currentAssets = useAppStore.getState().assets;
+          setAssets(currentAssets.map(a => 
+            a.id === assetId ? { ...a, status: "Active" } : a
+          ));
+        } catch (error) {
+          console.error(error);
+          const currentAssets = useAppStore.getState().assets;
+          setAssets(currentAssets.map(a => 
+            a.id === assetId ? { ...a, status: "Failed" } : a
+          ));
+        }
+      }
     }
   };
 

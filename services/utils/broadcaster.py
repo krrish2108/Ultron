@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Set
+from typing import Set, Any
 from fastapi import WebSocket
 
 class Broadcaster:
@@ -14,7 +14,7 @@ class Broadcaster:
     def disconnect(self, websocket: WebSocket):
         self.connections.remove(websocket)
 
-    async def broadcast(self, event_type: str, data: dict):
+    async def broadcast(self, event_type: str, data: Any):
         message = json.dumps({"type": event_type, "data": data})
         for connection in list(self.connections):
             try:

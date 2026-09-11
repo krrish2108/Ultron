@@ -28,7 +28,7 @@ def startup_docling():
     pipeline_options = PdfPipelineOptions()
     pipeline_options.accelerator_options = AcceleratorOptions(
         num_threads=8,
-        device=AcceleratorDevice.AUTO,
+        device=AcceleratorDevice.CUDA,
     )
 
     pipeline_options.do_ocr = True
