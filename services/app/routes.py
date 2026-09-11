@@ -43,10 +43,10 @@ async def chat(request: Request, message: dict):
         try:
             result = await supervisor.route(user_message, context, template_path=template_path)
             content = result.content
-            if result.file_path:
-                content += f"\n\nFile: {result.file_path}"
             for chunk in content.split():
                 yield chunk + " "
+            if result.file_path:
+                yield f"\n\nFile: {result.file_path}"
         except Exception as e:
             print(f"[CHAT ERROR] {e}")
             yield f"Error: {str(e)}"
@@ -92,13 +92,28 @@ async def ingest_file(request: Request, file: UploadFile = File(...)):
         data_dir = project_root / "data"
         data_dir.mkdir(exist_ok=True)
         context_path = data_dir / "context.md"
-        context_path.write_text(markdown, encoding="utf-8")
-        print(f"[INGEST] Saved {len(markdown)} chars to {context_path}")
+        
+        separator = f"\n\n---\n\n<!-- source: {file.filename} -->\n\n"
+        with open(context_path, "a", encoding="utf-8") as f:
+            f.write(separator + markdown)
+            
+        # Get total size for logging
+        total_size = context_path.stat().st_size
+        print(f"[INGEST] Appended {len(markdown)} chars, total {total_size} chars in {context_path}")
         
         return {"status": "ok", "filename": file.filename, "path": str(save_path)}
     except Exception as e:
         print(f"[INGEST ERROR] {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/context")
+async def clear_context():
+    """Clear context.md to start fresh."""
+    data_dir = project_root / "data"
+    context_path = data_dir / "context.md"
+    if context_path.exists():
+        context_path.unlink()
+    return {"status": "ok", "message": "Context cleared"}
 
 
 # ---------------------------------------------------------
