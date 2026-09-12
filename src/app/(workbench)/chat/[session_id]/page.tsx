@@ -31,6 +31,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
   const addMessageToSession = useAppStore(state => state.addMessageToSession);
   const updateMessageInSession = useAppStore(state => state.updateMessageInSession);
   const assets = useAppStore(state => state.assets);
+  const setSettingsOpen = useAppStore(state => state.setSettingsOpen);
 
   const messages = session?.messages || [];
 
@@ -135,6 +136,20 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
   };
 
   const handleSend = () => {
+    if (inputText.trim() === '/settings') {
+      setSettingsOpen(true);
+      setInputText("");
+      setShowSlashMenu(false);
+      return;
+    }
+
+    if (inputText.trim() === '/upload') {
+      fileInputRef.current?.click();
+      setInputText("");
+      setShowSlashMenu(false);
+      return;
+    }
+
     if (inputText.trim() || attachments.length > 0) {
       const newMessage: Message = { id: Date.now().toString(), role: 'user', content: inputText, attachments: attachments };
       addMessageToSession(sessionId, newMessage);
