@@ -17,6 +17,7 @@ export default function WorkbenchHome() {
   const router = useRouter();
   const createNewSession = useAppStore(state => state.createNewSession);
   const assets = useAppStore(state => state.assets);
+  const setSettingsOpen = useAppStore(state => state.setSettingsOpen);
   const [inputText, setInputText] = useState("");
   const [attachments, setAttachments] = useState<{name: string, type: string}[]>([]);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
@@ -48,6 +49,20 @@ export default function WorkbenchHome() {
   };
 
   const handleSend = () => {
+    if (inputText.trim() === '/settings') {
+      setSettingsOpen(true);
+      setInputText("");
+      setShowSlashMenu(false);
+      return;
+    }
+
+    if (inputText.trim() === '/upload') {
+      fileInputRef.current?.click();
+      setInputText("");
+      setShowSlashMenu(false);
+      return;
+    }
+
     if (inputText.trim() || attachments.length > 0) {
       const sessionId = createNewSession({
         id: Date.now().toString(),

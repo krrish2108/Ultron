@@ -57,6 +57,7 @@ interface AppState {
   createNewSession: (initialMessage: Message) => string;
   addMessageToSession: (sessionId: string, message: Message) => void;
   updateMessageInSession: (sessionId: string, messageId: string, updates: Partial<Message>) => void;
+  deleteSession: (sessionId: string) => void;
 
   assets: Asset[];
   setAssets: (assets: Asset[]) => void;
@@ -69,6 +70,28 @@ interface AppState {
   setRoutingLogic: (logic: TransparencyState['routingLogic']) => void;
   setNetworkStatus: (status: TransparencyState['networkStatus']) => void;
   connectTransparencyWS: () => void;
+
+  // UI State
+  isSettingsOpen: boolean;
+  setSettingsOpen: (isOpen: boolean) => void;
+
+  // User Settings
+  userSettings: {
+    fullName: string;
+    preferredName: string;
+    workDescription: string;
+    instructions: string;
+    theme: string;
+    chatFont: string;
+    motion: string;
+    voiceLanguage: string;
+    voiceStyle: string;
+    voiceSpeed: string;
+    responseCompletions: boolean;
+    email: string;
+    trainOnData: boolean;
+  };
+  updateUserSettings: (updates: Partial<AppState['userSettings']>) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -148,6 +171,10 @@ export const useAppStore = create<AppState>()(
     
     return sessionId;
   },
+
+  deleteSession: (sessionId) => set((state) => ({
+    sessions: state.sessions.filter(s => s.id !== sessionId)
+  })),
   
   addMessageToSession: (sessionId, message) => set((state) => {
     const sessionExists = state.sessions.some(s => s.id === sessionId);
@@ -239,7 +266,31 @@ export const useAppStore = create<AppState>()(
           useAppStore.getState().connectTransparencyWS();
         }, 5000);
       };
-    }
+    },
+
+    // UI State
+    isSettingsOpen: false,
+    setSettingsOpen: (isOpen) => set({ isSettingsOpen: isOpen }),
+
+    // User Settings
+    userSettings: {
+      fullName: "Krish Prajapati",
+      preferredName: "Krishu",
+      workDescription: "",
+      instructions: "",
+      theme: "dark",
+      chatFont: "Default",
+      motion: "System",
+      voiceLanguage: "English",
+      voiceStyle: "Buttery",
+      voiceSpeed: "Normal",
+      responseCompletions: true,
+      email: "krish@company.local",
+      trainOnData: false,
+    },
+    updateUserSettings: (updates) => set((state) => ({
+      userSettings: { ...state.userSettings, ...updates }
+    }))
   }),
   {
     name: 'ultron-app-storage',
@@ -248,6 +299,7 @@ export const useAppStore = create<AppState>()(
       workloadTypes: state.workloadTypes,
       sessions: state.sessions,
       assets: state.assets,
+      userSettings: state.userSettings,
       // Do not persist live transparency logs
     }),
   }

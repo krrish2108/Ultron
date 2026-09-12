@@ -1,22 +1,28 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import { 
   Plus, Search, FileText, 
   Settings, ChevronLeft, ChevronRight, Terminal, Network, ShieldCheck, Activity, BrainCircuit,
-  FolderOpen, Box, Code2, SlidersHorizontal, Pin
+  FolderOpen, Box, Code2, SlidersHorizontal, Pin, Trash2
 } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
+import { SettingsModal } from "@/components/ui/settings-modal";
 
 export default function WorkbenchLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
   const [comingSoon, setComingSoon] = useState<string | null>(null);
 
   const recentSessions = useAppStore(state => state.sessions);
+  const setSettingsOpen = useAppStore(state => state.setSettingsOpen);
+  const deleteSession = useAppStore(state => state.deleteSession);
 
   const documents = [
     { id: "d1", title: "syslog_export.txt", type: "log" },
@@ -43,6 +49,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="h-screen w-full bg-[#030303] flex overflow-hidden text-white font-sans relative">
+      <SettingsModal />
       
       {/* Global Animated Grid Background */}
       <div className="absolute inset-0 pointer-events-none z-0">
@@ -68,7 +75,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
             <div className="p-4 flex items-center justify-between">
               <Link href="/home" className="flex items-center gap-3 group">
                 <div className="w-8 h-8 rounded-md overflow-hidden flex items-center justify-center border border-white/10 group-hover:border-[#00f0ff]/50 transition-colors">
-                  <Image src="/logo.jpeg" alt="Logo" width={32} height={32} className="w-full h-full object-cover" />
+                  <Image src="/logo.jpeg" alt="Logo" width={32} height={32} className="w-full h-full object-cover" suppressHydrationWarning />
                 </div>
                 <span className="font-extrabold tracking-widest text-sm">ULTRON</span>
               </Link>
@@ -129,19 +136,47 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
                 <h3 className="px-3 text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">Today</h3>
                 <div className="space-y-0.5 px-1">
                   {recentSessions.filter(s => s.time === "Today").map(session => (
-                    <Link key={session.id} href={`/chat/${session.id}`} className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#00f0ff]/10 hover:shadow-[inset_2px_0_0_#00f0ff] transition-all group">
-                      {renderStatusDot(session.status)}
-                      <span className="text-xs text-white/70 truncate group-hover:text-white group-hover:translate-x-1 transition-transform">{session.title}</span>
+                    <Link key={session.id} href={`/chat/${session.id}`} className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-[#00f0ff]/10 hover:shadow-[inset_2px_0_0_#00f0ff] transition-all group">
+                      <div className="flex items-center gap-3 min-w-0 overflow-hidden">
+                        {renderStatusDot(session.status)}
+                        <span className="text-xs text-white/70 truncate group-hover:text-white group-hover:translate-x-1 transition-transform">{session.title}</span>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          deleteSession(session.id);
+                          if (pathname.includes(session.id)) router.push('/home');
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 text-red-400 rounded transition-all"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
                     </Link>
                   ))}
                 </div>
-                
-                <h3 className="px-3 text-[10px] font-bold text-white/40 uppercase tracking-wider mt-4 mb-2">Yesterday</h3>
+              </div>
+
+              <div className="mb-6">
+                <h3 className="px-3 text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">Yesterday</h3>
                 <div className="space-y-0.5 px-1">
                   {recentSessions.filter(s => s.time === "Yesterday").map(session => (
-                    <Link key={session.id} href={`/chat/${session.id}`} className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-[#00f0ff]/10 hover:shadow-[inset_2px_0_0_#00f0ff] transition-all group">
-                      {renderStatusDot(session.status)}
-                      <span className="text-xs text-white/70 truncate group-hover:text-white group-hover:translate-x-1 transition-transform">{session.title}</span>
+                    <Link key={session.id} href={`/chat/${session.id}`} className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-[#00f0ff]/10 hover:shadow-[inset_2px_0_0_#00f0ff] transition-all group">
+                      <div className="flex items-center gap-3 min-w-0 overflow-hidden">
+                        {renderStatusDot(session.status)}
+                        <span className="text-xs text-white/70 truncate group-hover:text-white group-hover:translate-x-1 transition-transform">{session.title}</span>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          deleteSession(session.id);
+                          if (pathname.includes(session.id)) router.push('/home');
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 text-red-400 rounded transition-all"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
                     </Link>
                   ))}
                 </div>
@@ -177,7 +212,10 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
               </div>
               
               {/* User Bar */}
-              <div className="flex items-center justify-between group cursor-pointer hover:bg-white/5 p-2 -mx-2 rounded-lg transition-colors">
+              <div 
+                onClick={() => setSettingsOpen(true)}
+                className="flex items-center justify-between group cursor-pointer hover:bg-white/5 p-2 -mx-2 rounded-lg transition-colors"
+              >
                 <div className="flex items-center gap-3 overflow-hidden">
                   <div className="w-10 h-10 rounded-full bg-blue-900 border border-black flex items-center justify-center font-bold text-sm shadow-[0_0_10px_rgba(0,0,0,0.5)]">
                     KP
@@ -200,15 +238,17 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
             className="h-full bg-black/40 backdrop-blur-2xl border-r border-white/10 flex flex-col items-center py-4 shrink-0 relative z-10 shadow-[4px_0_24px_rgba(0,0,0,0.5)]"
           >
             <button onClick={() => setLeftOpen(true)} className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center border border-white/20 hover:border-[#00f0ff] hover:shadow-[0_0_15px_rgba(0,240,255,0.4)] transition-all mb-8 group">
-              <Image src="/logo.jpeg" alt="Logo" width={40} height={40} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+              <Image src="/logo.jpeg" alt="Logo" width={40} height={40} className="w-full h-full object-cover group-hover:scale-110 transition-transform" suppressHydrationWarning />
             </button>
             <Link href="/home" className="w-10 h-10 rounded-xl bg-[#00f0ff]/10 text-[#00f0ff] border border-[#00f0ff]/30 hover:bg-[#00f0ff]/20 hover:shadow-[0_0_15px_rgba(0,240,255,0.3)] flex items-center justify-center mb-6 transition-all group">
               <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
             </Link>
             <div className="flex-1" />
-            <button className="w-10 h-10 flex items-center justify-center text-white/30 hover:text-white hover:bg-white/10 rounded-xl transition-all">
-              <Settings className="w-5 h-5" />
-            </button>
+              <div className="mt-auto mb-4 p-2 w-full flex justify-center">
+                <button onClick={() => setSettingsOpen(true)} className="p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all">
+                  <Settings className="w-5 h-5 text-white/50" />
+                </button>
+              </div>
           </motion.div>
         )}
       </AnimatePresence>
