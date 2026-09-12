@@ -50,69 +50,12 @@ SYSTEM_PROMPT = (
 )
 
 
-# Retrieval contract: Chunk dataclass & search_documents
-try:
-    from qdrant import Chunk, search_documents  # type: ignore
-except ImportError:
-    @dataclass
-    class Chunk:
-        """A single retrieved, reranked chunk with a clean source reference."""
-        text: str
-        score: float = 0.0
-        rerank_score: float = 0.0
-        source: Dict[str, Any] = field(default_factory=dict)
-        id: Optional[Any] = None
-
-    def search_documents(
-        query: str,
-        top_k: int = 5,
-        collection: str = "documents",
-    ) -> List[Chunk]:
-        """
-        Search the knowledge base using Qdrant vector database with hybrid
-        retrieval (dense + sparse) and Cross-Encoder reranking via QdrantStorage.
-        Returns structured Chunk objects conforming to Palak's retrieval contract.
-        """
-        if QdrantStorage is None:
-            print("[RAG] QdrantStorage is not available.")
-            return []
-
-        try:
-            vector_db = QdrantStorage(host=QDRANT_HOST, port=QDRANT_PORT)
-            raw_results = vector_db.query(query, collection=collection, limit=top_k)
-            chunks: List[Chunk] = []
-            for res in raw_results:
-                metadata = dict(res.get("metadata", {}))
-                score = float(res.get("score", 0.0))
-                if "score" not in metadata:
-                    metadata["score"] = score
-                if "rerank_score" not in metadata:
-                    metadata["rerank_score"] = score
-                if "document_id" not in metadata and "id" in res:
-                    metadata["document_id"] = res.get("id")
-
-                chunks.append(
-                    Chunk(
-                        text=res.get("text", ""),
-                        source=metadata,
-                        score=score,
-                        rerank_score=score,
-                        id=res.get("id"),
-                    )
-                )
-            return chunks
-        except Exception as e:
-            print(f"[RAG] Search documents error: {e}")
-            return []
-
-
-
 
 class RagState(TypedDict, total=False):
     collection: str
     query: str
     rerank_limit: int
-    chunks: List[Chunk]
+    chunks: List[Dict[str, Any]]
     context: str
     sources: List[Dict[str, Any]]
     answer: str
@@ -134,11 +77,8 @@ def search_node(state: RagState) -> RagState:
 
     print(f"[RAG] RAG searching for: {query}")
     try:
-        chunks = search_documents(
-            query=query,
-            top_k=rerank_limit,
-            collection=collection,
-        )
+        vector_db = QdrantStorage(host=QDRANT_HOST, port=QDRANT_PORT)
+        chunks = vector_db.query(query, collection=collection, limit=rerank_limit)
     except Exception as e:
         print(f"[RAG] Search error in search_node: {e}")
         chunks = []
@@ -149,50 +89,29 @@ def search_node(state: RagState) -> RagState:
     sources = []
 
     for i, chunk in enumerate(chunks, start=1):
-        context_blocks.append(f"[{i}] {chunk.text}")
-        source_dict = dict(getattr(chunk, "source", {}))
-        score_val = getattr(chunk, "score", 0.0)
-        rerank_val = getattr(chunk, "rerank_score", score_val)
+        text = chunk.get("text", "")
+        context_blocks.append(f"[{i}] {text}")
+        metadata = chunk.get("metadata", {})
+        score_val = float(chunk.get("score", 0.0))
+        
+        # Match the old fields
+        if "score" not in metadata:
+            metadata["score"] = score_val
+        if "rerank_score" not in metadata:
+            metadata["rerank_score"] = score_val
+        if "document_id" not in metadata and "id" in chunk:
+            metadata["document_id"] = chunk["id"]
 
         sources.append({
             "marker": i,
-            "text": chunk.text,
+            "text": text,
             "score": score_val,
-            "rerank_score": rerank_val,
-            **source_dict,
+            "rerank_score": score_val,
+            **metadata,
         })
 
     state["context"] = "\n\n".join(context_blocks)
     state["sources"] = sources
-    state["search_results"] = state["context"]
-    print(f"[RAG] Found {len(chunks)} chunks ({len(state['context'])} chars)")
-    return state
-
-
-def write_context_node(state: RagState) -> RagState:
-    """Write search results/context to data/context.md and ./context.md for downstream agents."""
-    context_content = state.get("context", "") or state.get("search_results", "")
-
-    # 1. Prototype project layout (data/context.md)
-    try:
-        project_root = Path(__file__).resolve().parent.parent.parent
-        data_dir = project_root / "data"
-        if data_dir.exists() or (project_root / "Services").exists():
-            data_dir.mkdir(parents=True, exist_ok=True)
-            context_path = data_dir / "context.md"
-            context_path.write_text(context_content, encoding="utf-8")
-            print(f"[RAG] Wrote {len(context_content)} chars to {context_path}")
-    except Exception as e:
-        print(f"[RAG] Notice: data/context.md write skipped: {e}")
-
-    # 2. Local context.md (for container or root execution)
-    try:
-        local_context = Path("context.md")
-        local_context.write_text(context_content, encoding="utf-8")
-    except Exception:
-        pass
-
-    return state
 
 
 def generate_node(state: RagState) -> RagState:
@@ -242,11 +161,9 @@ def build_rag_agent():
     """Build and compile the LangGraph RAG workflow."""
     graph = StateGraph(RagState)
     graph.add_node("search", search_node)
-    graph.add_node("write_context", write_context_node)
     graph.add_node("generate", generate_node)
 
     graph.add_edge(START, "search")
-    graph.add_edge("search", "write_context")
     graph.add_edge("search", "generate")
     graph.add_edge("generate", END)
 
@@ -295,49 +212,6 @@ def create_markdown(
 
     return md
 
-
-def run_rag_agent(
-    collection: str = "documents",
-    query: str = "",
-    rerank_limit: int = 5,
-) -> Dict[str, Any]:
-    """Functional entrypoint for executing the RAG agent pipeline."""
-    initial_state: RagState = {
-        "collection": collection,
-        "query": query,
-        "rerank_limit": rerank_limit,
-        "chunks": [],
-        "context": "",
-        "sources": [],
-        "answer": "",
-        "search_results": "",
-        "markdown": "",
-    }
-
-    try:
-        final_state = _agent.invoke(initial_state)
-    except Exception as e:
-        print(f"[RAG] Workflow error in run_rag_agent: {e}")
-        fallback_answer = "I couldn't find anything relevant in the knowledge base for that question."
-        return {
-            "answer": fallback_answer,
-            "sources": [],
-            "markdown": create_markdown(query, fallback_answer, []),
-            "context": "",
-        }
-
-    markdown = create_markdown(
-        final_state.get("query", query),
-        final_state.get("answer", ""),
-        final_state.get("sources", []),
-    )
-
-    return {
-        "answer": final_state.get("answer", ""),
-        "sources": final_state.get("sources", []),
-        "markdown": markdown,
-        "context": final_state.get("context", ""),
-    }
 
 
 class RAGAgent:
