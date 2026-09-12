@@ -8,17 +8,11 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 
 from services.agents.models import AgentResponse
-try:
-    from services.utils.config import LLM_MODEL, QDRANT_HOST, QDRANT_PORT
-except ImportError:
-    LLM_MODEL = os.environ.get("LLM_MODEL", "qwen3")
-    QDRANT_HOST = os.environ.get("QDRANT_HOST", "localhost")
-    QDRANT_PORT = int(os.environ.get("QDRANT_PORT", "6333"))
+from services.utils.config import RAG_MODEL
+from services.utils.config import  QDRANT_HOST, QDRANT_PORT
 
-try:
-    from services.utils.vector_db import QdrantStorage
-except ImportError:
-    QdrantStorage = None  # type: ignore[assignment]
+from services.utils.vector_db import QdrantStorage
+
 
 
 # Ollama is expected to run as its own service (see docker-compose.yml) or locally.
@@ -32,7 +26,6 @@ def _default_ollama_url() -> str:
 
 
 OLLAMA_BASE_URL = _default_ollama_url()
-DEFAULT_MODEL = os.environ.get("LLM_MODEL", LLM_MODEL if LLM_MODEL else "qwen3")
 
 SYSTEM_PROMPT = (
     "You are a private, on-premise assistant for the Sovereign AI "
@@ -113,25 +106,6 @@ except ImportError:
             return []
 
 
-def search_knowledge_base(
-    query: str,
-    collection: str = "documents",
-    limit: int = 5,
-) -> str:
-    """
-    Search the knowledge base using Qdrant vector database.
-    Returns formatted relevant document chunks.
-    """
-    chunks = search_documents(query, top_k=limit, collection=collection)
-    if not chunks:
-        return "No relevant documents found in the knowledge base."
-
-    formatted_results = []
-    for i, chunk in enumerate(chunks, 1):
-        formatted_results.append(
-            f"--- Result {i} (score: {chunk.score:.3f}) ---\n{chunk.text}\n"
-        )
-    return "\n".join(formatted_results)
 
 
 class RagState(TypedDict, total=False):
@@ -229,9 +203,9 @@ def generate_node(state: RagState) -> RagState:
             "for that question."
         )
         return state
-
+    print("[RAG] Generating Summary")
     llm_kwargs: Dict[str, Any] = {
-        "model": DEFAULT_MODEL,
+        "model": RAG_MODEL,
         "temperature": 0,
     }
     if OLLAMA_BASE_URL:
@@ -273,7 +247,7 @@ def build_rag_agent():
 
     graph.add_edge(START, "search")
     graph.add_edge("search", "write_context")
-    graph.add_edge("write_context", "generate")
+    graph.add_edge("search", "generate")
     graph.add_edge("generate", END)
 
     return graph.compile()
