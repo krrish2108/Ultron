@@ -197,12 +197,12 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
     <div className="flex-1 flex flex-col h-full relative" onClick={() => { setShowAttachMenu(false); setShowModelMenu(false); setShowSlashMenu(false); }}>
       
       {/* Top Header */}
-      <div className="h-14 border-b border-white/5 flex items-center justify-between px-6 shrink-0 bg-[#030303]/80 backdrop-blur-md sticky top-0 z-10">
-        <h2 className="font-bold text-sm text-white/90 truncate cursor-pointer hover:text-white transition-colors">
+      <div className="h-14 border-b border-border/50 flex items-center justify-between px-6 shrink-0 bg-background/80 backdrop-blur-md sticky top-0 z-10">
+        <h2 className="font-bold text-sm text-foreground/90 truncate cursor-pointer hover:text-foreground transition-colors">
           {session?.title || "New Chat"}
         </h2>
         <div className="flex items-center gap-3">
-          <div className="bg-white/5 border border-white/10 px-2 py-1 rounded text-[10px] font-bold text-white/50 uppercase tracking-wider">
+          <div className="bg-accent/50 border border-border px-2 py-1 rounded text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
             Log Analysis
           </div>
           <div className="bg-[#3b82f6]/10 border border-[#3b82f6]/20 px-2 py-1 rounded text-[10px] font-bold text-[#3b82f6] font-mono">
@@ -214,28 +214,28 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
       {/* Message Thread */}
       <div className="flex-1 overflow-y-auto p-6 no-scrollbar relative">
         {/* Ambient Glowing Background */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#00f0ff]/5 rounded-full blur-[120px] pointer-events-none opacity-50 animate-pulse" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] pointer-events-none opacity-50 animate-pulse" />
         
         <div className="max-w-4xl mx-auto space-y-10 pb-10 relative z-10 pt-4">
           {messages.map((msg) => (
             <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               
               {msg.role === 'assistant' && (
-                <div className="w-10 h-10 rounded-xl bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center shrink-0 mr-4 shadow-[0_0_15px_rgba(0,240,255,0.15)] relative">
-                  <div className="absolute inset-0 bg-[#00f0ff]/20 rounded-xl animate-pulse blur-md" />
-                  <BrainCircuit className="w-5 h-5 text-[#00f0ff] relative z-10" />
+                <div className="w-10 h-10 rounded-xl bg-card backdrop-blur-md border border-border flex items-center justify-center shrink-0 mr-4 shadow-[0_0_15px_var(--color-primary)] relative">
+                  <div className="absolute inset-0 bg-primary/20 rounded-xl animate-pulse blur-md" />
+                  <BrainCircuit className="w-5 h-5 text-primary relative z-10" />
                 </div>
               )}
 
               <div className={`${
                 msg.role === 'user' 
-                  ? 'bg-gradient-to-tr from-[#00f0ff] to-blue-600 text-black px-6 py-4 rounded-3xl rounded-tr-sm max-w-[80%] shadow-[0_0_25px_rgba(0,240,255,0.25)] font-medium' 
-                  : 'bg-black/40 backdrop-blur-2xl border border-white/10 text-white/90 px-6 py-5 rounded-3xl rounded-tl-sm max-w-[85%] shadow-[0_10px_40px_rgba(0,0,0,0.5)]'
+                  ? 'bg-gradient-to-tr from-primary to-blue-600 text-white px-6 py-4 rounded-3xl rounded-tr-sm max-w-[80%] shadow-[0_0_25px_var(--color-primary)] font-medium' 
+                  : 'bg-card backdrop-blur-2xl border border-border text-foreground px-6 py-5 rounded-3xl rounded-tl-sm max-w-[85%] shadow-sm'
               }`}>
                 {msg.status === 'loading' ? (
                   <div className="flex items-center gap-4">
-                    <Loader2 className="w-5 h-5 text-[#00f0ff] animate-spin" />
-                    <span className="text-sm text-[#00f0ff] font-mono animate-pulse tracking-wide">{msg.loadingText}</span>
+                    <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                    <span className="text-sm text-primary font-mono animate-pulse tracking-wide">{msg.loadingText}</span>
                   </div>
                 ) : (
                   <>
@@ -247,18 +247,18 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
 
                       return (
                         <>
-                          <p className={`text-[15px] leading-relaxed mb-1 ${msg.role === 'user' ? 'text-black/90' : 'text-white/80 font-light tracking-wide whitespace-pre-wrap'}`}>{textContent}</p>
+                          <p className={`text-[15px] leading-relaxed mb-1 ${msg.role === 'user' ? 'text-white/90' : 'text-foreground/90 font-light tracking-wide whitespace-pre-wrap'}`}>{textContent}</p>
                           {generatedFile && (
-                            <div className="bg-[#030303] border border-[#00f0ff]/30 rounded-xl p-4 flex flex-col gap-4 mt-4 hover:border-[#00f0ff] transition-colors group relative overflow-hidden">
-                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#00f0ff]/5 to-transparent -translate-x-[100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                            <div className="bg-background border border-primary/30 rounded-xl p-4 flex flex-col gap-4 mt-4 hover:border-primary transition-colors group relative overflow-hidden">
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent -translate-x-[100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
                                 <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 rounded-lg bg-[#00f0ff]/10 flex items-center justify-center shrink-0 shadow-[0_0_10px_rgba(0,240,255,0.2)]">
-                                    <FileText className="w-5 h-5 text-[#00f0ff]" />
+                                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 shadow-[0_0_10px_var(--color-primary)]">
+                                    <FileText className="w-5 h-5 text-primary" />
                                   </div>
                                   <div className="min-w-0">
-                                    <div className="text-sm font-bold text-white group-hover:text-[#00f0ff] transition-colors truncate max-w-[200px]" title={fileName}>{fileName}</div>
-                                    <div className="text-[10px] text-white/40 uppercase tracking-wider font-bold">Generated Artifact</div>
+                                    <div className="text-sm font-bold text-foreground group-hover:text-primary transition-colors truncate max-w-[200px]" title={fileName}>{fileName}</div>
+                                    <div className="text-[10px] text-muted-foreground/70 uppercase tracking-wider font-bold">Generated Artifact</div>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -272,11 +272,11 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                                         status: "Saved",
                                       });
                                     }} 
-                                    className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-medium text-white/70 hover:text-white hover:border-white/30 transition-all flex items-center gap-2 whitespace-nowrap"
+                                    className="px-3 py-1.5 rounded-lg bg-accent/50 border border-border hover:bg-accent text-xs font-medium text-foreground/70 hover:text-foreground hover:border-border/80 transition-all flex items-center gap-2 whitespace-nowrap"
                                   >
                                     <Folder className="w-3.5 h-3.5" /> Save to Assets
                                   </button>
-                                  <a href={`http://localhost:8000/download?path=${encodeURIComponent(generatedFile)}`} download className="w-8 h-8 rounded-full bg-[#00f0ff]/10 flex items-center justify-center hover:bg-[#00f0ff]/20 text-[#00f0ff] shadow-[0_0_10px_rgba(0,240,255,0.2)] transition-all shrink-0">
+                                  <a href={`http://localhost:8000/download?path=${encodeURIComponent(generatedFile)}`} download className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/20 text-primary shadow-[0_0_10px_var(--color-primary)] transition-all shrink-0">
                                     <Download className="w-4 h-4" />
                                   </a>
                                 </div>
@@ -289,8 +289,8 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                     {msg.attachments && msg.attachments.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-2">
                         {msg.attachments.map((file, idx) => (
-                          <div key={idx} className="bg-white/10 rounded px-2 py-1 flex items-center gap-1.5 text-xs">
-                            <FileUp className="w-3 h-3" /> {file.name}
+                          <div key={idx} className="bg-accent rounded px-2 py-1 flex items-center gap-1.5 text-xs text-foreground/80">
+                            <FileUp className="w-3 h-3 text-muted-foreground" /> {file.name}
                           </div>
                         ))}
                       </div>
@@ -305,7 +305,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
       </div>
 
       {/* Input Area */}
-      <div className="p-6 bg-gradient-to-t from-[#030303] via-[#030303] to-transparent w-full shrink-0 relative z-20">
+      <div className="p-6 bg-gradient-to-t from-background via-background to-transparent w-full shrink-0 relative z-20">
         <div className="max-w-4xl mx-auto">
           <div className="relative group w-full">
             {/* Aurora Glow Effect */}
@@ -319,23 +319,23 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
             </div>
             
             {/* Inner background to preserve dark input area */}
-            <div className="absolute inset-[1px] bg-[#0a0a0a]/90 backdrop-blur-3xl rounded-[15px] pointer-events-none border border-white/10" />
+            <div className="absolute inset-[1px] bg-background/90 backdrop-blur-3xl rounded-[15px] pointer-events-none border border-border/50" />
 
             {/* Content Container (Not clipped, allows popups) */}
             <div className="relative z-10 flex flex-col p-3">
             
             {/* Attached Files Display */}
             {attachments.length > 0 && (
-              <div className="flex flex-wrap gap-2 p-2 mb-2 border-b border-white/5">
+              <div className="flex flex-wrap gap-2 p-2 mb-2 border-b border-border/50">
                 {attachments.map((file, idx) => (
-                  <div key={idx} className="bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 flex items-center gap-2">
-                    <div className="w-6 h-6 rounded bg-[#00f0ff]/10 flex items-center justify-center shrink-0">
-                      <FileUp className="w-3.5 h-3.5 text-[#00f0ff]" />
+                  <div key={idx} className="bg-accent/50 border border-border rounded-lg px-3 py-1.5 flex items-center gap-2">
+                    <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center shrink-0">
+                      <FileUp className="w-3.5 h-3.5 text-primary" />
                     </div>
-                    <span className="text-xs text-white/80 max-w-[120px] truncate">{file.name}</span>
+                    <span className="text-xs text-foreground/80 max-w-[120px] truncate">{file.name}</span>
                     <button 
                       onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}
-                      className="text-white/40 hover:text-red-400 ml-1 transition-colors"
+                      className="text-muted-foreground hover:text-red-400 ml-1 transition-colors"
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -348,7 +348,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                 <div className="relative">
                   <button 
                     onClick={(e) => { e.stopPropagation(); setShowAttachMenu(!showAttachMenu); }}
-                    className="p-3.5 text-white/40 hover:text-[#00f0ff] transition-colors rounded-xl hover:bg-[#00f0ff]/10"
+                    className="p-3.5 text-muted-foreground hover:text-primary transition-colors rounded-xl hover:bg-primary/10"
                   >
                   <Paperclip className="w-5 h-5" />
                 </button>
@@ -360,18 +360,18 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute bottom-full left-0 mb-2 w-56 bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl overflow-hidden py-1 z-50"
+                      className="absolute bottom-full left-0 mb-2 w-56 bg-popover border border-border rounded-xl shadow-2xl overflow-hidden py-1 z-50"
                       onClick={e => e.stopPropagation()}
                     >
-                      <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-3 px-4 py-3 text-xs text-white/80 hover:bg-white/5 transition-colors">
-                        <FileUp className="w-4 h-4 text-white/40" /> Add files or documents
+                      <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-3 px-4 py-3 text-xs text-foreground/80 hover:bg-accent transition-colors">
+                        <FileUp className="w-4 h-4 text-muted-foreground" /> Add files or documents
                       </button>
-                      <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-3 px-4 py-3 text-xs text-white/80 hover:bg-white/5 transition-colors">
-                        <ImageIcon className="w-4 h-4 text-white/40" /> Add photos
+                      <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-3 px-4 py-3 text-xs text-foreground/80 hover:bg-accent transition-colors">
+                        <ImageIcon className="w-4 h-4 text-muted-foreground" /> Add photos
                       </button>
-                      <div className="h-px bg-white/5 my-1" />
-                      <button className="w-full flex items-center gap-3 px-4 py-3 text-xs text-white/80 hover:bg-white/5 transition-colors">
-                        <Globe className="w-4 h-4 text-white/40" /> Web search
+                      <div className="h-px bg-border/50 my-1" />
+                      <button className="w-full flex items-center gap-3 px-4 py-3 text-xs text-foreground/80 hover:bg-accent transition-colors">
+                        <Globe className="w-4 h-4 text-muted-foreground" /> Web search
                       </button>
                     </motion.div>
                   )}
@@ -393,42 +393,42 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute bottom-full left-0 mb-2 w-72 max-h-64 overflow-y-auto no-scrollbar bg-[#0a0a0a] border border-[#00f0ff]/30 rounded-xl shadow-[0_0_20px_rgba(0,240,255,0.1)] py-2 z-50"
+                    className="absolute bottom-full left-0 mb-2 w-72 max-h-64 overflow-y-auto no-scrollbar bg-popover border border-primary/30 rounded-xl shadow-[0_0_20px_var(--color-primary)] py-2 z-50"
                     onClick={e => e.stopPropagation()}
                   >
-                    <div className="px-4 py-2 text-xs font-bold text-[#00f0ff] uppercase tracking-wider border-b border-white/5 mb-1 mt-2">
+                    <div className="px-4 py-2 text-xs font-bold text-primary uppercase tracking-wider border-b border-border/50 mb-1 mt-2">
                       Attach Asset or Folder
                     </div>
                     {assets.filter(a => a.name.toLowerCase().includes(slashQuery.toLowerCase())).length === 0 ? (
-                      <div className="px-4 py-3 text-xs text-white/40">No matching assets found.</div>
+                      <div className="px-4 py-3 text-xs text-muted-foreground">No matching assets found.</div>
                     ) : (
                       assets.filter(a => a.name.toLowerCase().includes(slashQuery.toLowerCase())).map(asset => (
                         <button 
                           key={asset.id}
                           onClick={() => handleSlashSelect(asset)}
-                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition-colors text-left"
+                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-foreground/80 hover:bg-accent transition-colors text-left"
                         >
-                          {asset.isFolder ? <Folder className="w-4 h-4 text-blue-400 shrink-0" /> : <FileText className="w-4 h-4 text-white/40 shrink-0" />}
+                          {asset.isFolder ? <Folder className="w-4 h-4 text-blue-400 shrink-0" /> : <FileText className="w-4 h-4 text-muted-foreground shrink-0" />}
                           <span className="truncate">{asset.name}</span>
-                          <span className="text-[10px] text-white/30 ml-auto shrink-0">{asset.isFolder ? 'Folder' : asset.type}</span>
+                          <span className="text-[10px] text-muted-foreground/60 ml-auto shrink-0">{asset.isFolder ? 'Folder' : asset.type}</span>
                         </button>
                       ))
                     )}
 
-                    <div className="px-4 py-2 text-xs font-bold text-[#00f0ff] uppercase tracking-wider border-b border-white/5 mb-1 mt-2">
+                    <div className="px-4 py-2 text-xs font-bold text-primary uppercase tracking-wider border-b border-border/50 mb-1 mt-2">
                       Quick Snippets
                     </div>
                     {COMMAND_SNIPPETS.filter(s => s.command.toLowerCase().includes(slashQuery.toLowerCase())).map(snippet => (
                       <button 
                         key={snippet.id}
                         onClick={() => handleSnippetSelect(snippet.text)}
-                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition-colors text-left"
+                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-foreground/80 hover:bg-accent transition-colors text-left"
                       >
-                        <div className="w-5 h-5 rounded bg-[#00f0ff]/10 flex items-center justify-center shrink-0 border border-[#00f0ff]/20">
-                          <span className="text-[#00f0ff] font-mono text-[10px]">/</span>
+                        <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
+                          <span className="text-primary font-mono text-[10px]">/</span>
                         </div>
                         <span className="font-medium truncate">{snippet.command}</span>
-                        <span className="text-[10px] text-white/40 ml-auto shrink-0">{snippet.label}</span>
+                        <span className="text-[10px] text-muted-foreground ml-auto shrink-0">{snippet.label}</span>
                       </button>
                     ))}
                   </motion.div>
@@ -446,17 +446,17 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                     handleSend();
                   }
                 }}
-                  className="flex-1 bg-transparent text-white placeholder:text-white/30 resize-none outline-none py-4 px-4 max-h-32 no-scrollbar min-h-[56px] text-[17px] font-light leading-relaxed"
+                  className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground resize-none outline-none py-4 px-4 max-h-32 no-scrollbar min-h-[56px] text-[17px] font-light leading-relaxed"
                 rows={1}
               />
                 <div className="relative flex items-center ml-2">
                   <button 
                     onClick={(e) => { e.stopPropagation(); setShowModelMenu(!showModelMenu); }}
-                    className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-xl transition-all h-[50px]"
+                    className="flex items-center gap-2 bg-accent/50 hover:bg-accent border border-border px-4 py-2 rounded-xl transition-all h-[50px]"
                   >
-                    <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest hidden sm:inline">Model:</span>
-                    <span className="text-xs text-white font-mono font-bold">Drone 1</span>
-                    <ChevronDown className="w-3 h-3 text-white/40" />
+                    <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest hidden sm:inline">Model:</span>
+                    <span className="text-xs text-foreground font-mono font-bold">Drone 1</span>
+                    <ChevronDown className="w-3 h-3 text-muted-foreground" />
                   </button>
 
                   <AnimatePresence>
@@ -465,12 +465,12 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute bottom-full right-0 mb-2 w-48 bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl overflow-hidden py-1 z-50"
+                        className="absolute bottom-full right-0 mb-2 w-48 bg-popover border border-border rounded-xl shadow-2xl overflow-hidden py-1 z-50"
                         onClick={e => e.stopPropagation()}
                       >
-                        <div className="px-4 py-2 text-[10px] font-bold text-white/30 uppercase tracking-wider bg-white/5 border-b border-white/5">Available Models</div>
-                        <button className="w-full text-left px-4 py-3 text-xs font-bold text-white hover:bg-white/5 transition-colors flex items-center justify-between">
-                          Drone 1 <div className="w-1.5 h-1.5 rounded-full bg-[#00f0ff] shadow-[0_0_8px_#00f0ff]" />
+                        <div className="px-4 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider bg-accent/50 border-b border-border/50">Available Models</div>
+                        <button className="w-full text-left px-4 py-3 text-xs font-bold text-foreground hover:bg-accent transition-colors flex items-center justify-between">
+                          Drone 1 <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)]" />
                         </button>
                       </motion.div>
                     )}
@@ -479,7 +479,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
 
                 <button 
                   onClick={handleSend}
-                  className={`h-[50px] px-5 rounded-xl transition-all ml-2 flex shrink-0 items-center justify-center group/btn overflow-hidden relative ${inputText.trim() || attachments.length > 0 ? 'bg-gradient-to-r from-[#00f0ff] to-blue-600 text-black hover:shadow-[0_0_20px_rgba(0,240,255,0.5)] hover:scale-105' : 'bg-white/5 text-white/30'}`}
+                  className={`h-[50px] px-5 rounded-xl transition-all ml-2 flex shrink-0 items-center justify-center group/btn overflow-hidden relative ${inputText.trim() || attachments.length > 0 ? 'bg-gradient-to-r from-primary to-blue-600 text-white hover:shadow-[0_0_20px_var(--color-primary)] hover:scale-105' : 'bg-accent/50 text-muted-foreground'}`}
                 >
                   <div className="absolute inset-0 bg-white/20 -skew-x-12 -translate-x-full group-hover/btn:animate-[shimmer_1.5s_infinite]" />
                   <Send className="w-5 h-5 relative z-10" />

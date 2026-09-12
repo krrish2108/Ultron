@@ -19,6 +19,8 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
   const [comingSoon, setComingSoon] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const recentSessions = useAppStore(state => state.sessions);
   const setSettingsOpen = useAppStore(state => state.setSettingsOpen);
@@ -48,7 +50,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <div className="h-screen w-full bg-[#030303] flex overflow-hidden text-white font-sans relative">
+    <div className="h-screen w-full bg-background flex overflow-hidden text-foreground font-sans relative">
       <SettingsModal />
       
       {/* Global Animated Grid Background */}
@@ -69,56 +71,56 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
             animate={{ width: 280, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.4, type: "spring", stiffness: 300, damping: 30 }}
-            className="h-full bg-black/40 backdrop-blur-2xl border-r border-white/10 flex flex-col shrink-0 overflow-hidden relative z-10 shadow-[4px_0_24px_rgba(0,0,0,0.5)]"
+            className="h-full bg-background/80 backdrop-blur-2xl border-r border-border flex flex-col shrink-0 overflow-hidden relative z-10 shadow-[4px_0_24px_rgba(0,0,0,0.1)] dark:shadow-[4px_0_24px_rgba(0,0,0,0.5)]"
           >
             {/* Header */}
             <div className="p-4 flex items-center justify-between">
               <Link href="/home" className="flex items-center gap-3 group">
-                <div className="w-8 h-8 rounded-md overflow-hidden flex items-center justify-center border border-white/10 group-hover:border-[#00f0ff]/50 transition-colors">
+                <div className="w-8 h-8 rounded-md overflow-hidden flex items-center justify-center border border-border group-hover:border-primary/50 transition-colors">
                   <Image src="/logo.jpeg" alt="Logo" width={32} height={32} className="w-full h-full object-cover" suppressHydrationWarning />
                 </div>
                 <span className="font-extrabold tracking-widest text-sm">ULTRON</span>
               </Link>
-              <button onClick={() => setLeftOpen(false)} className="text-white/40 hover:text-white transition-colors">
+              <button onClick={() => setLeftOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors">
                 <ChevronLeft className="w-5 h-5" />
               </button>
             </div>
 
             {/* Top Navigation Links */}
             <div className="px-3 pb-2 space-y-0.5 mt-2">
-              <Link href="/home" className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-all group text-white/80 hover:text-white">
-                <Plus className="w-4 h-4 text-white/50 group-hover:text-white transition-colors" />
+              <Link href="/home" className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent transition-all group text-muted-foreground hover:text-foreground">
+                <Plus className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" />
                 <span className="text-sm font-medium">New Task</span>
               </Link>
               
-              <Link href="/enclaves" className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-all group mt-1 text-white/80 hover:text-white">
-                <FolderOpen className="w-4 h-4 text-white/50 group-hover:text-white transition-colors" />
+              <Link href="/enclaves" className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent transition-all group mt-1 text-muted-foreground hover:text-foreground">
+                <FolderOpen className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" />
                 <span className="text-sm font-medium transition-colors">Enclaves</span>
               </Link>
               
-              <Link href="/assets" className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-all group text-white/80 hover:text-white">
-                <Box className="w-4 h-4 text-white/50 group-hover:text-white transition-colors" />
+              <Link href="/assets" className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent transition-all group text-muted-foreground hover:text-foreground">
+                <Box className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" />
                 <span className="text-sm font-medium transition-colors">Assets</span>
               </Link>
 
-              <button onClick={() => setComingSoon("Source")} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-all group">
-                <Code2 className="w-4 h-4 text-white/50 group-hover:text-white transition-colors" />
-                <span className="text-sm font-medium text-white/80 group-hover:text-white transition-colors">Source</span>
+              <button onClick={() => setComingSoon("Source")} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent transition-all group text-muted-foreground hover:text-foreground">
+                <Code2 className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" />
+                <span className="text-sm font-medium transition-colors">Source</span>
               </button>
 
-              <button onClick={() => setComingSoon("Customize")} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/10 transition-all group">
-                <SlidersHorizontal className="w-4 h-4 text-white/50 group-hover:text-white transition-colors" />
-                <span className="text-sm font-medium text-white/80 group-hover:text-white transition-colors">Customize</span>
+              <button onClick={() => setComingSoon("Customize")} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent transition-all group text-muted-foreground hover:text-foreground">
+                <SlidersHorizontal className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" />
+                <span className="text-sm font-medium transition-colors">Customize</span>
               </button>
             </div>
 
             {/* Pinned Enclaves */}
             <div className="px-3 py-4">
-              <div className="flex items-center justify-between px-3 text-white/40 hover:text-white transition-colors group cursor-pointer mb-2">
+              <div className="flex items-center justify-between px-3 text-muted-foreground hover:text-foreground transition-colors group cursor-pointer mb-2">
                 <h3 className="text-xs font-semibold">Pinned Enclaves</h3>
                 <Plus className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <div className="px-3 py-2 text-xs text-white/30 flex items-center gap-2">
+              <div className="px-3 py-2 text-xs text-muted-foreground/70 flex items-center gap-2">
                 <Pin className="w-3 h-3" /> Pin enclaves to keep them here
               </div>
             </div>
@@ -126,20 +128,43 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
             {/* Search and Sessions */}
             <div className="flex-1 overflow-y-auto overflow-x-hidden px-2 no-scrollbar">
               
-              <div className="flex items-center justify-between px-4 mt-2 mb-2 text-white/40 hover:text-white transition-colors group cursor-pointer">
+              <div 
+                onClick={() => setIsSearchOpen(!isSearchOpen)}
+                className="flex items-center justify-between px-4 mt-2 mb-2 text-muted-foreground hover:text-foreground transition-colors group cursor-pointer"
+              >
                 <h3 className="text-xs font-semibold">Tasks and logs</h3>
                 <Search className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
+
+              <AnimatePresence>
+                {isSearchOpen && (
+                  <motion.div 
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="px-3 mb-4 overflow-hidden"
+                  >
+                      <input 
+                        type="text" 
+                        placeholder="Search tasks..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full bg-secondary border border-border rounded-lg px-3 py-1.5 text-xs text-foreground outline-none focus:border-primary transition-colors"
+                        autoFocus
+                      />
+                  </motion.div>
+                )}
+              </AnimatePresence>
               
               {/* Recent Sessions */}
               <div className="mb-6">
-                <h3 className="px-3 text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">Today</h3>
+                <h3 className="px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Today</h3>
                 <div className="space-y-0.5 px-1">
-                  {recentSessions.filter(s => s.time === "Today").map(session => (
-                    <Link key={session.id} href={`/chat/${session.id}`} className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-[#00f0ff]/10 hover:shadow-[inset_2px_0_0_#00f0ff] transition-all group">
+                  {recentSessions.filter(s => s.time === "Today" && s.title.toLowerCase().includes(searchQuery.toLowerCase())).map(session => (
+                    <Link key={session.id} href={`/chat/${session.id}`} className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-primary/10 hover:shadow-[inset_2px_0_0_var(--color-primary)] transition-all group">
                       <div className="flex items-center gap-3 min-w-0 overflow-hidden">
                         {renderStatusDot(session.status)}
-                        <span className="text-xs text-white/70 truncate group-hover:text-white group-hover:translate-x-1 transition-transform">{session.title}</span>
+                        <span className="text-xs text-foreground/70 truncate group-hover:text-foreground group-hover:translate-x-1 transition-transform">{session.title}</span>
                       </div>
                       <button
                         onClick={(e) => {
@@ -158,13 +183,13 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
               </div>
 
               <div className="mb-6">
-                <h3 className="px-3 text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">Yesterday</h3>
+                <h3 className="px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Yesterday</h3>
                 <div className="space-y-0.5 px-1">
-                  {recentSessions.filter(s => s.time === "Yesterday").map(session => (
-                    <Link key={session.id} href={`/chat/${session.id}`} className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-[#00f0ff]/10 hover:shadow-[inset_2px_0_0_#00f0ff] transition-all group">
+                  {recentSessions.filter(s => s.time === "Yesterday" && s.title.toLowerCase().includes(searchQuery.toLowerCase())).map(session => (
+                    <Link key={session.id} href={`/chat/${session.id}`} className="flex items-center justify-between px-3 py-2 rounded-md hover:bg-primary/10 hover:shadow-[inset_2px_0_0_var(--color-primary)] transition-all group">
                       <div className="flex items-center gap-3 min-w-0 overflow-hidden">
                         {renderStatusDot(session.status)}
-                        <span className="text-xs text-white/70 truncate group-hover:text-white group-hover:translate-x-1 transition-transform">{session.title}</span>
+                        <span className="text-xs text-foreground/70 truncate group-hover:text-foreground group-hover:translate-x-1 transition-transform">{session.title}</span>
                       </div>
                       <button
                         onClick={(e) => {
@@ -184,14 +209,14 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
 
               {/* Documents */}
               <div className="mb-6">
-                <h3 className="px-3 text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2 flex items-center">
+                <h3 className="px-3 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center">
                   <FileText className="w-3 h-3 mr-1" /> Ingested Documents
                 </h3>
                 <div className="space-y-0.5 px-1">
                   {documents.map(doc => (
-                    <button key={doc.id} className="w-full flex items-center gap-2 px-3 py-2 rounded-md hover:bg-white/10 transition-all group text-left">
-                      <FileText className="w-3 h-3 text-white/30 group-hover:text-[#3b82f6] shrink-0 transition-colors" />
-                      <span className="text-xs text-white/50 truncate group-hover:text-white/90 group-hover:translate-x-1 transition-transform">{doc.title}</span>
+                    <button key={doc.id} className="w-full flex items-center gap-2 px-3 py-2 rounded-md hover:bg-accent transition-all group text-left">
+                      <FileText className="w-3 h-3 text-muted-foreground group-hover:text-primary shrink-0 transition-colors" />
+                      <span className="text-xs text-muted-foreground truncate group-hover:text-foreground group-hover:translate-x-1 transition-transform">{doc.title}</span>
                     </button>
                   ))}
                 </div>
@@ -200,7 +225,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
             </div>
 
             {/* Footer */}
-            <div className="p-4 border-t border-white/10 space-y-4 shrink-0 bg-black/20">
+            <div className="p-4 border-t border-border space-y-4 shrink-0 bg-muted/50">
               {/* Egress Pill */}
               <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-md px-3 py-2 flex items-center justify-between shadow-[0_0_15px_rgba(16,185,129,0.1)] relative overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-400/10 to-transparent -translate-x-full group-hover:animate-[shimmer_2s_infinite]" />
@@ -214,15 +239,15 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
               {/* User Bar */}
               <div 
                 onClick={() => setSettingsOpen(true)}
-                className="flex items-center justify-between group cursor-pointer hover:bg-white/5 p-2 -mx-2 rounded-lg transition-colors"
+                className="flex items-center justify-between group cursor-pointer hover:bg-accent p-2 -mx-2 rounded-lg transition-colors"
               >
                 <div className="flex items-center gap-3 overflow-hidden">
-                  <div className="w-10 h-10 rounded-full bg-blue-900 border border-black flex items-center justify-center font-bold text-sm shadow-[0_0_10px_rgba(0,0,0,0.5)]">
+                  <div className="w-10 h-10 rounded-full bg-blue-900 border border-border flex items-center justify-center font-bold text-sm text-white shadow-[0_0_10px_rgba(0,0,0,0.1)] dark:shadow-[0_0_10px_rgba(0,0,0,0.5)]">
                     KP
                   </div>
                   <div className="flex-1">
-                    <div className="font-bold text-sm text-white">Krish P</div>
-                    <div className="text-[10px] text-white/40">krish@company.local</div>
+                    <div className="font-bold text-sm text-foreground">Krish P</div>
+                    <div className="text-[10px] text-muted-foreground">krish@company.local</div>
                   </div>
                 </div>
                 <Settings className="w-4 h-4 text-white/30 group-hover:text-[#00f0ff] transition-colors shrink-0" />
@@ -235,18 +260,18 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
             animate={{ width: 72, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.4, type: "spring", stiffness: 300, damping: 30 }}
-            className="h-full bg-black/40 backdrop-blur-2xl border-r border-white/10 flex flex-col items-center py-4 shrink-0 relative z-10 shadow-[4px_0_24px_rgba(0,0,0,0.5)]"
+            className="h-full bg-card/80 backdrop-blur-2xl border-r border-border flex flex-col items-center py-4 shrink-0 relative z-10 shadow-sm"
           >
-            <button onClick={() => setLeftOpen(true)} className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center border border-white/20 hover:border-[#00f0ff] hover:shadow-[0_0_15px_rgba(0,240,255,0.4)] transition-all mb-8 group">
+            <button onClick={() => setLeftOpen(true)} className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center border border-border hover:border-primary hover:shadow-[0_0_15px_var(--color-primary)] transition-all mb-8 group">
               <Image src="/logo.jpeg" alt="Logo" width={40} height={40} className="w-full h-full object-cover group-hover:scale-110 transition-transform" suppressHydrationWarning />
             </button>
-            <Link href="/home" className="w-10 h-10 rounded-xl bg-[#00f0ff]/10 text-[#00f0ff] border border-[#00f0ff]/30 hover:bg-[#00f0ff]/20 hover:shadow-[0_0_15px_rgba(0,240,255,0.3)] flex items-center justify-center mb-6 transition-all group">
+            <Link href="/home" className="w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 hover:shadow-[0_0_15px_var(--color-primary)] flex items-center justify-center mb-6 transition-all group">
               <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
             </Link>
             <div className="flex-1" />
               <div className="mt-auto mb-4 p-2 w-full flex justify-center">
-                <button onClick={() => setSettingsOpen(true)} className="p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all">
-                  <Settings className="w-5 h-5 text-white/50" />
+                <button onClick={() => setSettingsOpen(true)} className="p-3 bg-accent/50 hover:bg-accent rounded-xl transition-all">
+                  <Settings className="w-5 h-5 text-muted-foreground" />
                 </button>
               </div>
           </motion.div>
@@ -266,15 +291,15 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
             animate={{ width: 340, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.4, type: "spring", stiffness: 300, damping: 30 }}
-            className="h-full bg-black/40 backdrop-blur-2xl border-l border-white/10 flex flex-col shrink-0 overflow-hidden relative z-10 shadow-[-4px_0_24px_rgba(0,0,0,0.5)]"
+            className="h-full bg-card/80 backdrop-blur-2xl border-l border-border flex flex-col shrink-0 overflow-hidden relative z-10 shadow-sm"
           >
             {/* Header */}
-            <div className="p-5 flex items-center justify-between border-b border-white/10 bg-black/20">
+            <div className="p-5 flex items-center justify-between border-b border-border/50 bg-background/50">
               <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-[#00f0ff]" />
-                <span className="text-xs font-bold uppercase tracking-wider text-white/70">System Transparency</span>
+                <Activity className="w-4 h-4 text-primary" />
+                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">System Transparency</span>
               </div>
-              <button onClick={() => setRightOpen(false)} className="text-white/40 hover:text-white transition-colors">
+              <button onClick={() => setRightOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors">
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
@@ -283,47 +308,47 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
               
               {/* Agent Trace */}
               <div className="space-y-3">
-                <h3 className="text-[10px] font-bold text-[#00f0ff] uppercase tracking-widest flex items-center gap-2">
+                <h3 className="text-[10px] font-bold text-primary uppercase tracking-widest flex items-center gap-2">
                   <Terminal className="w-3.5 h-3.5" /> Agent Trace
                 </h3>
-                <div className="bg-black/60 border border-white/10 rounded-xl p-4 font-mono text-[10px] leading-relaxed text-white/60 h-48 overflow-y-auto no-scrollbar shadow-inner relative">
-                  <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_0%,rgba(0,240,255,0.05)_50%,transparent_100%)] bg-[length:100%_4px] animate-[scan_2s_linear_infinite] pointer-events-none opacity-50" />
+                <div className="bg-background border border-border rounded-xl p-4 font-mono text-[10px] leading-relaxed text-muted-foreground h-48 overflow-y-auto no-scrollbar shadow-inner relative">
+                  <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_0%,var(--color-primary)_50%,transparent_100%)] bg-[length:100%_4px] animate-[scan_2s_linear_infinite] pointer-events-none opacity-20" />
                   {terminalLogs.map((log, idx) => {
-                    let colorClass = "text-white/60";
-                    if (log.includes("[PLAN]")) colorClass = "text-[#00f0ff]";
-                    if (log.includes("Intent classified")) colorClass = "text-emerald-400";
-                    if (log.includes("[ACT]")) colorClass = "text-[#3b82f6]";
-                    if (log.includes("[OBSERVE]")) colorClass = "text-amber-400";
+                    let colorClass = "text-muted-foreground";
+                    if (log.includes("[PLAN]")) colorClass = "text-primary";
+                    if (log.includes("Intent classified")) colorClass = "text-emerald-500";
+                    if (log.includes("[ACT]")) colorClass = "text-blue-500";
+                    if (log.includes("[OBSERVE]")) colorClass = "text-amber-500";
                     return <motion.div initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} key={idx} className={colorClass}>{log}</motion.div>;
                   })}
-                  <div className="text-[#00f0ff] mt-2 animate-pulse">_</div>
+                  <div className="text-primary mt-2 animate-pulse">_</div>
                 </div>
               </div>
 
               {/* Routing Decision */}
               <div className="space-y-3">
-                <h3 className="text-[10px] font-bold text-[#3b82f6] uppercase tracking-widest flex items-center gap-2">
+                <h3 className="text-[10px] font-bold text-blue-500 uppercase tracking-widest flex items-center gap-2">
                   <BrainCircuit className="w-3.5 h-3.5" /> Auto-Routing Logic
                 </h3>
-                <div className="bg-black/40 border border-white/10 rounded-xl p-4 space-y-3 hover:border-white/20 hover:bg-white/5 transition-all">
+                <div className="bg-accent/50 border border-border rounded-xl p-4 space-y-3 hover:border-border/80 hover:bg-accent transition-all">
                   {routingLogic ? (
                     <>
                       <div className="flex justify-between items-center">
-                        <span className="text-xs text-white/60">Task Type</span>
-                        <span className="text-xs font-bold text-[#00f0ff]">{routingLogic.taskType}</span>
+                        <span className="text-xs text-muted-foreground">Task Type</span>
+                        <span className="text-xs font-bold text-primary">{routingLogic.taskType}</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-xs text-white/60">Selected Model</span>
-                        <span className="text-xs font-mono text-black font-bold bg-[#3b82f6] px-2 py-0.5 rounded shadow-[0_0_10px_rgba(59,130,246,0.5)]">{routingLogic.selectedModel}</span>
+                        <span className="text-xs text-muted-foreground">Selected Model</span>
+                        <span className="text-xs font-mono text-white font-bold bg-blue-500 px-2 py-0.5 rounded shadow-sm">{routingLogic.selectedModel}</span>
                       </div>
-                      <div className="pt-3 mt-3 border-t border-white/10">
-                        <span className="text-xs text-white/50 leading-relaxed block">
+                      <div className="pt-3 mt-3 border-t border-border">
+                        <span className="text-xs text-muted-foreground/80 leading-relaxed block">
                           Reasoning: {routingLogic.reasoning}
                         </span>
                       </div>
                     </>
                   ) : (
-                    <div className="text-xs text-white/40 italic text-center py-2">Waiting for task...</div>
+                    <div className="text-xs text-muted-foreground text-center py-2">Waiting for task...</div>
                   )}
                 </div>
               </div>
@@ -333,19 +358,11 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
                 <h3 className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest flex items-center gap-2">
                   <Network className="w-3.5 h-3.5" /> Live Network
                 </h3>
-                <div className="bg-black/40 border border-white/10 rounded-xl p-4 flex items-center gap-5 hover:border-emerald-500/30 transition-colors relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="w-12 h-12 rounded-full border-2 border-emerald-500/20 border-t-emerald-500 animate-[spin_3s_linear_infinite] flex items-center justify-center shrink-0 shadow-[0_0_20px_rgba(16,185,129,0.3)] relative z-10">
-                    <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/50">
-                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                    </div>
-                  </div>
                   <div className="relative z-10">
                     <div className="text-3xl font-extrabold text-emerald-400 font-mono tracking-tighter drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]">0</div>
                     <div className="text-[10px] text-emerald-400/80 uppercase tracking-wider font-bold mt-1">Outbound Conn.</div>
                   </div>
                 </div>
-              </div>
 
             </div>
           </motion.aside>
