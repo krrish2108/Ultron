@@ -10,7 +10,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 
 from .models import AgentResponse, DocGenState, Section, Sections
-from services.utils.config import DOC_GEN_MODEL, LLM_MODEL
+from services.utils.config import DOC_GEN_MODEL
 from services.utils.chunking import chunk_markdown
 from services.utils.template_utils import (
     read_template_node,
@@ -118,8 +118,9 @@ async def generate_structured_document(state: DocGenState) -> dict:
 
     llm = ChatOllama(
         model=DOC_GEN_MODEL,
-        num_ctx=8192,
+        num_ctx=4096,
         temperature=0.2,
+        keep_alive='30m'
     )
     structured_llm = llm.with_structured_output(Sections)
 

@@ -8,10 +8,9 @@ env_path = project_root / ".env"
 load_dotenv(env_path)
 
 # Config values
-LLM_MODEL = os.getenv("LLM_MODEL", "qwen3:8b")
 ROUTER_MODEL = os.getenv("ROUTER_MODEL", "qwen3:1.7b")
 DOC_GEN_MODEL = os.getenv("DOC_GEN_MODEL", "qwen2.5-coder:7b")
-
+RAG_MODEL = os.getenv("RAG_MODEL", "qwen3:1.7b")
 LLM_REASONING = os.getenv("LLM_REASONING", "false").lower() == "true"
 
 QDRANT_HOST = os.getenv("QDRANT_HOST", "localhost")
