@@ -7,32 +7,16 @@ from langgraph.graph import END, START, StateGraph
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 
-# Models & configs with graceful fallbacks for multiple environments
+from services.agents.models import AgentResponse
 try:
-    from Services.agents.models import AgentResponse
-except ImportError:
-    from pydantic import BaseModel
-    from typing_extensions import Literal
-
-    class AgentResponse(BaseModel):  # type: ignore[no-redef]
-        agent: Literal["rag", "doc_gen", "chat"] = "rag"
-        status: Literal["success", "error", "no_results"] = "success"
-        content: str = ""
-        error: Optional[str] = None
-        search_results: Optional[str] = None
-        file_path: Optional[str] = None
-        needs_followup: bool = False
-        followup_hint: Optional[str] = None
-
-try:
-    from Services.utils.config import LLM_MODEL, QDRANT_HOST, QDRANT_PORT
+    from services.utils.config import LLM_MODEL, QDRANT_HOST, QDRANT_PORT
 except ImportError:
     LLM_MODEL = os.environ.get("LLM_MODEL", "qwen3")
     QDRANT_HOST = os.environ.get("QDRANT_HOST", "localhost")
     QDRANT_PORT = int(os.environ.get("QDRANT_PORT", "6333"))
 
 try:
-    from Services.utils.vector_db import QdrantStorage
+    from services.utils.vector_db import QdrantStorage
 except ImportError:
     QdrantStorage = None  # type: ignore[assignment]
 
@@ -263,8 +247,8 @@ def generate_node(state: RagState) -> RagState:
         SystemMessage(content=SYSTEM_PROMPT),
         HumanMessage(
             content=(
-                f"Context:\n{state['context']}\n\n"
-                f"Question: {state['query']}"
+                f"Context:\n{state['context']}\n\n" # type: ignore
+                f"Question: {state['query']}" # type: ignore
             )
         ),
     ]
