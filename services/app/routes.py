@@ -4,6 +4,9 @@ import tempfile
 from pathlib import Path
 from fastapi import APIRouter, UploadFile, File, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse, FileResponse
+import logging
+
+logger = logging.getLogger(__name__)
 
 from services.utils.ingest import ingest_document
 from services.utils.broadcaster import broadcaster
@@ -82,7 +85,11 @@ async def ingest_file(request: Request, file: UploadFile = File(...)):
     save_path = docs_dir / file_path_str
     
     content = await file.read()
+    file_size = len(content)
     save_path.write_bytes(content)
+    
+    uploaded_files_count = len(list(docs_dir.iterdir()))
+    logger.info(f"Ingest started for file: {file.filename}, size: {file_size} bytes. Total uploaded files in dir: {uploaded_files_count}")
 
     try:
         doc = await asyncio.to_thread(ingest_document, str(save_path), request.app.state.converter)
@@ -97,13 +104,14 @@ async def ingest_file(request: Request, file: UploadFile = File(...)):
         with open(context_path, "a", encoding="utf-8") as f:
             f.write(separator + markdown)
             
-        # Get total size for logging
         total_size = context_path.stat().st_size
-        print(f"[INGEST] Appended {len(markdown)} chars, total {total_size} chars in {context_path}")
+        saved_files_count = context_path.read_text(encoding="utf-8").count("<!-- source:")
+        
+        logger.info(f"Ingest successful for file: {file.filename}. Appended {len(markdown)} chars. Total context.md size: {total_size} bytes. Total files saved to context.md: {saved_files_count}")
         
         return {"status": "ok", "filename": file.filename, "path": str(save_path)}
     except Exception as e:
-        print(f"[INGEST ERROR] {e}")
+        logger.error(f"Ingest error for file {file.filename}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/context")
