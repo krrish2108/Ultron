@@ -120,7 +120,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
         formData.append("file", file);
         
         try {
-          const endpoint = file.name.endsWith('.docx') ? "/upload-template" : "/ingest";
+          const endpoint = "/ingest";
           await fetch(`http://localhost:8000${endpoint}`, {
             method: "POST",
             body: formData,
