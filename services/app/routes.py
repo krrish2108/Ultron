@@ -4,6 +4,9 @@ import tempfile
 from pathlib import Path
 from fastapi import APIRouter, UploadFile, File, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse, FileResponse
+import logging
+
+logger = logging.getLogger(__name__)
 
 from services.utils.ingest import ingest_document
 from services.utils.broadcaster import broadcaster
@@ -43,10 +46,10 @@ async def chat(request: Request, message: dict):
         try:
             result = await supervisor.route(user_message, context, template_path=template_path)
             content = result.content
-            if result.file_path:
-                content += f"\n\nFile: {result.file_path}"
             for chunk in content.split():
                 yield chunk + " "
+            if result.file_path:
+                yield f"\n\nFile: {result.file_path}"
         except Exception as e:
             print(f"[CHAT ERROR] {e}")
             yield f"Error: {str(e)}"
@@ -82,7 +85,11 @@ async def ingest_file(request: Request, file: UploadFile = File(...)):
     save_path = docs_dir / file_path_str
     
     content = await file.read()
+    file_size = len(content)
     save_path.write_bytes(content)
+    
+    uploaded_files_count = len(list(docs_dir.iterdir()))
+    logger.info(f"Ingest started for file: {file.filename}, size: {file_size} bytes. Total uploaded files in dir: {uploaded_files_count}")
 
     try:
         doc = await asyncio.to_thread(ingest_document, str(save_path), request.app.state.converter)
@@ -92,13 +99,29 @@ async def ingest_file(request: Request, file: UploadFile = File(...)):
         data_dir = project_root / "data"
         data_dir.mkdir(exist_ok=True)
         context_path = data_dir / "context.md"
-        context_path.write_text(markdown, encoding="utf-8")
-        print(f"[INGEST] Saved {len(markdown)} chars to {context_path}")
+        
+        separator = f"\n\n---\n\n<!-- source: {file.filename} -->\n\n"
+        with open(context_path, "a", encoding="utf-8") as f:
+            f.write(separator + markdown)
+            
+        total_size = context_path.stat().st_size
+        saved_files_count = context_path.read_text(encoding="utf-8").count("<!-- source:")
+        
+        logger.info(f"Ingest successful for file: {file.filename}. Appended {len(markdown)} chars. Total context.md size: {total_size} bytes. Total files saved to context.md: {saved_files_count}")
         
         return {"status": "ok", "filename": file.filename, "path": str(save_path)}
     except Exception as e:
-        print(f"[INGEST ERROR] {e}")
+        logger.error(f"Ingest error for file {file.filename}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/context")
+async def clear_context():
+    """Clear context.md to start fresh."""
+    data_dir = project_root / "data"
+    context_path = data_dir / "context.md"
+    if context_path.exists():
+        context_path.unlink()
+    return {"status": "ok", "message": "Context cleared"}
 
 
 # ---------------------------------------------------------

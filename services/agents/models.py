@@ -53,3 +53,4 @@ class DocGenState(TypedDict):
     block_content: Optional[dict[str, str]]
     structured_document: Optional[Sections]
     final_output: str
+

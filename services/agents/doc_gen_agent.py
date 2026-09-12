@@ -9,7 +9,7 @@ from langgraph.graph import StateGraph, END
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 
-from services.agents.models import AgentResponse, DocGenState, Section, Sections
+from .models import AgentResponse, DocGenState, Section, Sections
 from services.utils.config import DOC_GEN_MODEL, LLM_MODEL
 from services.utils.chunking import chunk_markdown
 from services.utils.template_utils import (
@@ -28,6 +28,10 @@ from services.utils.template_utils import (
 
 def read_context_node(state: DocGenState) -> dict:
     """Node 1: Read context.md"""
+    if state.get("context_md"):
+        print(f"[DOC_GEN] read_context: {len(state['context_md'])} chars from passed context")
+        return {}
+
     project_root = Path(__file__).resolve().parent.parent.parent
     context_path = project_root / "data" / "context.md"
 
@@ -224,7 +228,7 @@ def generate_node(state: DocGenState) -> dict:
     md_parts: list[str] = []
     for section in structured_doc.sections:
         template = _SECTION_TYPE_TO_MD.get(section.type, "{content}")
-        md_parts.append(template.format(content=section.content))
+        md_parts.append(template.replace("{content}", section.content))
 
     markdown_content = "\n\n".join(md_parts)
     print(f"[DOC_GEN] generate_node: produced {len(markdown_content)} chars markdown")
@@ -301,7 +305,7 @@ class DocGenAgent:
         try:
             initial_state: DocGenState = {
                 "message": message,
-                "context_md": "",
+                "context_md": context,
                 "template_path": template_path,
                 "template_outline": None,
                 "template_placeholders": None,

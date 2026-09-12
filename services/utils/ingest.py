@@ -1,9 +1,6 @@
 from pathlib import Path
 import time
 from docling.document_converter import DocumentConverter
-from docling_core.transforms.chunker.hybrid_chunker import HybridChunker
-
-_chunker = HybridChunker()
 def ingest_document(file_path: str | Path, converter : DocumentConverter):
     """
     Ingests a document using docling and returns its doc object.
@@ -17,12 +14,6 @@ def ingest_document(file_path: str | Path, converter : DocumentConverter):
     print(f"[INGEST] Converted in {time.time() - start} seconds")
     return result.document
 
-def chunk_document(doc):
-    """
-    Chunks a docling document using HybridChunker.
-    """
-    chunks = list(_chunker.chunk(doc))
-    return chunks
 
 if __name__ == "__main__":
     # Test path - replace with a real file if testing directly
