@@ -113,6 +113,8 @@ def search_node(state: RagState) -> RagState:
     state["context"] = "\n\n".join(context_blocks)
     state["sources"] = sources
 
+    return state
+
 
 def generate_node(state: RagState) -> RagState:
     """Generate answer from context with citations or return clean fallback if empty."""
@@ -149,6 +151,7 @@ def generate_node(state: RagState) -> RagState:
     try:
         response = llm.invoke(messages)
         state["answer"] = str(response.content)
+        print(str(response.content))
     except Exception as e:
         print(f"[RAG] Generation error in generate_node: {e}")
         state["answer"] = f"Unable to generate response from model: {e}"
