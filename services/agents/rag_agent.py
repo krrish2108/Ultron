@@ -8,7 +8,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 
 from services.agents.models import AgentResponse
-from services.utils.config import RAG_MODEL
+from services.utils.config import RAG_MODEL, RAG_REPEAT_PENALTY, RAG_TEMP, RAG_TOP_K, RAG_TOP_P
 from services.utils.config import  QDRANT_HOST, QDRANT_PORT
 
 from services.utils.vector_db import QdrantStorage
@@ -16,16 +16,6 @@ from services.utils.vector_db import QdrantStorage
 
 
 # Ollama is expected to run as its own service (see docker-compose.yml) or locally.
-def _default_ollama_url() -> str:
-    env_url = os.environ.get("OLLAMA_BASE_URL") or os.environ.get("OLLAMA_HOST")
-    if env_url:
-        return env_url
-    if os.path.exists("/.dockerenv") or os.environ.get("IN_DOCKER"):
-        return "http://ollama:11434"
-    return "http://localhost:11434"
-
-
-OLLAMA_BASE_URL = _default_ollama_url()
 
 SYSTEM_PROMPT = (
     "You are a private, on-premise assistant for the Sovereign AI "
@@ -40,6 +30,22 @@ SYSTEM_PROMPT = (
     "Summarize the information in your own words instead of copying "
     "the context word-for-word. Keep the answer clear and easy to "
     "understand. "
+
+    "You need to generate markdown form answers only not in any other form "
+    
+    "## Section types"
+    """
+    - **Title**: The main title of the document. Use exactly one at the top.
+    - **Heading**: Major section headings (equivalent to ##).
+    - **Subtitle**: Sub-headings (equivalent to ###).
+    - **Paragraph**: Standard prose text. Synthesize and write coherent paragraphs answering the user prompt.
+    - **BulletList**: A markdown-formatted bullet list (`- item`). Use for key takeaways, extracted rules, or unordered lists.
+    - **NumberedList**: A markdown-formatted numbered list (`1. item`). Use for sequential steps or ranked items.
+    - **Table**: A markdown table (must include header row and separators). Use for structured data comparison.
+    - **BlockQuote**: A markdown quote (`> quote`). Use for citing important rules, legal text, or emphasis.
+    - **CodeBlock**: A markdown code block (``` ... ```). Use for code snippets or raw technical data.
+    - **Section**: Any other miscellaneous markdown text."""
+
 
     "Do not add information that is not present in the context. "
     "If the context does not contain enough information, say so plainly "
@@ -120,23 +126,21 @@ def generate_node(state: RagState) -> RagState:
     """Generate answer from context with citations or return clean fallback if empty."""
     if not state.get("chunks"):
         state["answer"] = (
-            "I couldn't find anything relevant in the knowledge base "
-            "for that question."
+            "RAG Agent couldn't find anything relevant in the knowledge base for that question."
         )
         return state
-    print("[RAG] Generating Summary")
-    llm_kwargs: Dict[str, Any] = {
-        "model": RAG_MODEL,
-        "temperature": 0,
-    }
-    if OLLAMA_BASE_URL:
-        llm_kwargs["base_url"] = OLLAMA_BASE_URL
+    print("[RAG] Generating Summary")    
 
     context_len = len(state.get("context", ""))
     if context_len > 0:
-        llm_kwargs["num_ctx"] = max(2048, context_len + 1000)
+        num_ctx = max(2048, (context_len//4) + 1000)
 
-    llm = ChatOllama(**llm_kwargs)
+    llm = ChatOllama(model=RAG_MODEL,
+                     temperature=RAG_TEMP,
+                     top_k=RAG_TOP_K,
+                     top_p=RAG_TOP_P,
+                     num_ctx=num_ctx,
+                     repeat_penalty=RAG_REPEAT_PENALTY)
 
     messages = [
         SystemMessage(content=SYSTEM_PROMPT),
@@ -151,7 +155,7 @@ def generate_node(state: RagState) -> RagState:
     try:
         response = llm.invoke(messages)
         state["answer"] = str(response.content)
-        print(str(response.content))
+        print(response)
     except Exception as e:
         print(f"[RAG] Generation error in generate_node: {e}")
         state["answer"] = f"Unable to generate response from model: {e}"
@@ -177,43 +181,6 @@ def build_rag_agent():
 _agent = build_rag_agent()
 rag_graph = _agent  # Backward compatibility alias
 
-
-def create_markdown(
-    query: str,
-    answer: str,
-    sources: List[Dict[str, Any]],
-) -> str:
-    """Format search results into a clean, comprehensive Markdown report."""
-    md = "# Sovereign Search Result\n\n"
-    md += f"**Query:** {query}\n\n"
-    md += "## Answer\n\n"
-    md += f"{answer}\n\n"
-
-    if sources:
-        md += "## Sources\n\n"
-        for i, source in enumerate(sources, start=1):
-            marker = source.get("marker", i)
-            md += f"### [{marker}] Result {i}\n\n"
-
-            if "text" in source:
-                md += f"**text:** {source['text']}\n\n"
-
-            for field_name in ("document_id", "file_name", "filename", "title", "source"):
-                if field_name in source and source[field_name] is not None:
-                    md += f"**{field_name}:** {source[field_name]}\n\n"
-
-            if "rerank_score" in source and source["rerank_score"] is not None:
-                try:
-                    md += f"**rerank_score:** {float(source['rerank_score']):.4f}\n\n"
-                except (ValueError, TypeError):
-                    md += f"**rerank_score:** {source['rerank_score']}\n\n"
-            elif "score" in source and source["score"] is not None:
-                try:
-                    md += f"**score:** {float(source['score']):.4f}\n\n"
-                except (ValueError, TypeError):
-                    md += f"**score:** {source['score']}\n\n"
-
-    return md
 
 
 
@@ -259,12 +226,6 @@ class RAGAgent:
             context = final_state.get("context", "")
             sources = final_state.get("sources", [])
 
-            markdown = create_markdown(
-                final_state.get("query", query),
-                answer,
-                sources,
-            )
-
             no_results = (
                 not chunks
                 or not context
@@ -275,7 +236,7 @@ class RAGAgent:
                 agent="rag",
                 status="no_results" if no_results else "success",
                 content=answer,
-                search_results=markdown if markdown else context,
+                search_results=final_state["answer"] 
             )
         except Exception as e:
             print(f"[RAG] Error in RAGAgent.run: {e}")
