@@ -10,7 +10,13 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 
 from .models import AgentResponse, DocGenState, Section, Sections
-from services.utils.config import DOC_GEN_MODEL
+from services.utils.config import (
+    DOC_GEN_MODEL,
+    DOC_GEN_TEMP,
+    DOC_GEN_TOP_K,
+    DOC_GEN_TOP_P,
+    DOC_GEN_REPEAT_PENALTY
+)
 from services.utils.chunking import chunk_markdown
 from services.utils.template_utils import (
     read_template_node,
@@ -116,12 +122,24 @@ async def generate_structured_document(state: DocGenState) -> dict:
     message = state.get("message", "")
     template_outline = state.get("template_outline")
 
-    llm = ChatOllama(
-        model=DOC_GEN_MODEL,
-        num_ctx=4096,
-        temperature=0.2,
-        keep_alive='30m'
-    )
+    context_len = len(context_md)
+
+    llm_kwargs = {
+        "model": DOC_GEN_MODEL,
+        "temperature": DOC_GEN_TEMP,
+        "top_k": DOC_GEN_TOP_K,
+        "top_p": DOC_GEN_TOP_P,
+        "repeat_penalty": DOC_GEN_REPEAT_PENALTY,
+        "keep_alive": '30m',
+        "num_ctx": max(8192, (context_len // 4) + 2048)
+    }
+    
+    import os
+    base_url = os.environ.get("OLLAMA_BASE_URL") or os.environ.get("OLLAMA_HOST")
+    if base_url:
+        llm_kwargs["base_url"] = base_url
+
+    llm = ChatOllama(**llm_kwargs)
     structured_llm = llm.with_structured_output(Sections)
 
     if template_outline:
