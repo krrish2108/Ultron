@@ -202,12 +202,13 @@ class QdrantStorage:
         results = []
         for point, score in scored[:limit]:
             payload = point.payload or {}
-            results.append({
-                "id": point.id,
-                "text": payload.get("text", ""),
-                "score": float(score),
-                "metadata": {k: v for k, v in payload.items() if k != "text"}
-            })
+            if score > 0.2:
+                results.append({
+                    "id": point.id,
+                    "text": payload.get("text", ""),
+                    "score": float(score),
+                    "metadata": {k: v for k, v in payload.items() if k != "text"}
+                })
         return results
 
 
