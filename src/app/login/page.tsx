@@ -493,52 +493,52 @@ export default function LoginPage() {
             </p>
           </motion.div>
 
-          <div className="space-y-4">
+          <div className="space-y-4" style={{ perspective: "1000px" }}>
             <motion.div 
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              whileHover={{ scale: 1.02, x: -10 }}
-              className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 flex items-center gap-5 cursor-default transition-all shadow-lg"
+              initial={{ opacity: 0, x: 80, rotateY: 20 }}
+              animate={{ opacity: 1, x: 0, rotateY: 0 }}
+              transition={{ type: "spring", stiffness: 250, damping: 20, delay: 0.1 }}
+              className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 flex items-center gap-5 cursor-default transition-all duration-300 ease-out hover:border-emerald-500/40 hover:shadow-[0_0_30px_rgba(16,185,129,0.15)] hover:scale-[1.03] hover:-translate-x-4 relative overflow-hidden group"
             >
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
-                <ShieldCheck className="w-6 h-6 text-emerald-400" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-400/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(16,185,129,0.2)] group-hover:scale-110 group-hover:shadow-[0_0_25px_rgba(16,185,129,0.4)] transition-all duration-300 relative z-10">
+                <ShieldCheck className="w-6 h-6 text-emerald-400 group-hover:text-emerald-300" />
               </div>
-              <div>
-                <h3 className="text-white font-bold text-sm mb-1">Air-Gapped Enclave</h3>
-                <p className="text-white/50 text-xs leading-relaxed">Zero egress network isolation verified by hypervisor.</p>
+              <div className="relative z-10">
+                <h3 className="text-white font-bold text-sm mb-1 group-hover:text-emerald-300 transition-colors">Air-Gapped Enclave</h3>
+                <p className="text-white/50 text-xs leading-relaxed group-hover:text-white/70 transition-colors">Zero egress network isolation verified by hypervisor.</p>
               </div>
             </motion.div>
 
             <motion.div 
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              whileHover={{ scale: 1.02, x: -10 }}
-              className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 flex items-center gap-5 cursor-default transition-all shadow-lg ml-8"
+              initial={{ opacity: 0, x: 80, rotateY: 20 }}
+              animate={{ opacity: 1, x: 0, rotateY: 0 }}
+              transition={{ type: "spring", stiffness: 250, damping: 20, delay: 0.2 }}
+              className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 flex items-center gap-5 cursor-default transition-all duration-300 ease-out hover:border-[#00f0ff]/40 hover:shadow-[0_0_30px_rgba(0,240,255,0.15)] hover:scale-[1.03] hover:-translate-x-4 ml-8 relative overflow-hidden group"
             >
-              <div className="w-12 h-12 rounded-xl bg-[#00f0ff]/10 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(0,240,255,0.2)]">
-                <Cpu className="w-6 h-6 text-[#00f0ff]" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#00f0ff]/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+              <div className="w-12 h-12 rounded-xl bg-[#00f0ff]/10 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(0,240,255,0.2)] group-hover:scale-110 group-hover:shadow-[0_0_25px_rgba(0,240,255,0.4)] transition-all duration-300 relative z-10">
+                <Cpu className="w-6 h-6 text-[#00f0ff] group-hover:text-white" />
               </div>
-              <div>
-                <h3 className="text-white font-bold text-sm mb-1">Hardware Accelerated</h3>
-                <p className="text-white/50 text-xs leading-relaxed">Direct metal access via NPU and integrated graphics.</p>
+              <div className="relative z-10">
+                <h3 className="text-white font-bold text-sm mb-1 group-hover:text-[#00f0ff] transition-colors">Hardware Accelerated</h3>
+                <p className="text-white/50 text-xs leading-relaxed group-hover:text-white/70 transition-colors">Direct metal access via NPU and integrated graphics.</p>
               </div>
             </motion.div>
 
             <motion.div 
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-              whileHover={{ scale: 1.02, x: -10 }}
-              className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 flex items-center gap-5 cursor-default transition-all shadow-lg ml-16"
+              initial={{ opacity: 0, x: 80, rotateY: 20 }}
+              animate={{ opacity: 1, x: 0, rotateY: 0 }}
+              transition={{ type: "spring", stiffness: 250, damping: 20, delay: 0.3 }}
+              className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 flex items-center gap-5 cursor-default transition-all duration-300 ease-out hover:border-indigo-500/40 hover:shadow-[0_0_30px_rgba(99,102,241,0.15)] hover:scale-[1.03] hover:-translate-x-4 ml-16 relative overflow-hidden group"
             >
-              <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
-                <Network className="w-6 h-6 text-indigo-400" />
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-400/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+              <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(99,102,241,0.2)] group-hover:scale-110 group-hover:shadow-[0_0_25px_rgba(99,102,241,0.4)] transition-all duration-300 relative z-10">
+                <Network className="w-6 h-6 text-indigo-400 group-hover:text-indigo-300" />
               </div>
-              <div>
-                <h3 className="text-white font-bold text-sm mb-1">Local RAG Graph</h3>
-                <p className="text-white/50 text-xs leading-relaxed">Vectorized memory spanning millions of your documents.</p>
+              <div className="relative z-10">
+                <h3 className="text-white font-bold text-sm mb-1 group-hover:text-indigo-400 transition-colors">Local RAG Graph</h3>
+                <p className="text-white/50 text-xs leading-relaxed group-hover:text-white/70 transition-colors">Vectorized memory spanning millions of your documents.</p>
               </div>
             </motion.div>
           </div>
