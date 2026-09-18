@@ -108,6 +108,15 @@
     cursor: url('/cursor.svg') 4 4, pointer !important;
   }
 
+  ::selection {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  input, textarea, [contenteditable="true"] {
+    caret-color: var(--primary);
+  }
+
   /* Text elements use standard text selection cursor */
   input[type="text"], input[type="password"], input[type="email"], input[type="number"], textarea, p, h1, h2, h3, h4, h5, h6, span {
     cursor: text !important;
