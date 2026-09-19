@@ -3,8 +3,9 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Box, FileText, FileImage, FileCode, FileArchive, Download, Trash2, Search, UploadCloud, FolderPlus, Folder, ArrowLeft, X } from "lucide-react";
-
 import { useAppStore, Asset } from "@/store/useAppStore";
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 export default function AssetsPage() {
   const assets = useAppStore(state => state.assets);
@@ -16,23 +17,40 @@ export default function AssetsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
 
   const currentAssets = assets.filter(a => a.folderId === currentFolderId);
   const currentFolder = assets.find(a => a.id === currentFolderId);
 
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const newFiles = Array.from(e.target.files).map((f, i) => ({
-        id: `uploaded-${Date.now()}-${i}`,
-        name: f.name,
-        type: f.name.split('.').pop() || "unknown",
-        size: (f.size / 1024 / 1024).toFixed(1) + " MB",
-        date: "Just now",
-        status: "Processing",
-        folderId: currentFolderId,
-        isFolder: false
-      }));
-      setAssets([...newFiles, ...assets]);
+      const newAssets: Asset[] = await Promise.all(
+        Array.from(e.target.files).map(async (f, i) => {
+          const isImage = f.type.startsWith('image/');
+          let content = undefined;
+          let fileUrl = undefined;
+          
+          if (isImage) {
+            fileUrl = URL.createObjectURL(f);
+          } else if (f.size < 5 * 1024 * 1024) { 
+            content = await f.text();
+          }
+
+          return {
+            id: `uploaded-${Date.now()}-${i}`,
+            name: f.name,
+            type: f.name.split('.').pop() || "unknown",
+            size: (f.size / 1024 / 1024).toFixed(1) + " MB",
+            date: "Just now",
+            status: "Indexed",
+            folderId: currentFolderId,
+            isFolder: false,
+            content,
+            fileUrl
+          };
+        })
+      );
+      setAssets([...newAssets, ...assets]);
     }
   };
 
@@ -164,7 +182,7 @@ export default function AssetsPage() {
                     if (asset.isFolder) {
                       setCurrentFolderId(asset.id);
                     } else {
-                      window.open(`/${asset.name}`, '_blank');
+                      setSelectedAsset(asset);
                     }
                   }}
                   className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-white/5 transition-colors group cursor-pointer"
@@ -270,7 +288,78 @@ export default function AssetsPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      {/* ASSET VIEWER MODAL */}
+      <AnimatePresence>
+        {selectedAsset && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 sm:p-8"
+            onClick={() => setSelectedAsset(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="bg-[#050505] border border-white/10 rounded-2xl w-full max-w-5xl h-[85vh] flex flex-col shadow-2xl overflow-hidden relative"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b border-white/10 bg-[#0a0a0a]">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+                    {getIcon(selectedAsset.type)}
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-bold text-white truncate max-w-[300px] sm:max-w-md">{selectedAsset.name}</h2>
+                    <div className="text-xs text-white/50 flex items-center gap-2 mt-0.5">
+                      <span className="uppercase">{selectedAsset.type}</span>
+                      <span>&bull;</span>
+                      <span>{selectedAsset.size}</span>
+                      <span>&bull;</span>
+                      <span className="text-[#00f0ff]">{selectedAsset.status}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button className="bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold py-2 px-3 text-xs rounded-xl flex items-center gap-2 transition-colors">
+                    <Download className="w-4 h-4" /> Download
+                  </button>
+                  <button onClick={() => setSelectedAsset(null)} className="p-2 hover:bg-white/10 rounded-xl transition-colors text-white/50 hover:text-white">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
 
+              {/* Body */}
+              <div className="flex-1 overflow-auto bg-[#030303] relative custom-scrollbar">
+                {selectedAsset.fileUrl ? (
+                  <div className="flex items-center justify-center min-h-full p-8">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={selectedAsset.fileUrl} alt={selectedAsset.name} className="max-w-full max-h-full object-contain rounded-xl shadow-lg border border-white/10" />
+                  </div>
+                ) : selectedAsset.content ? (
+                  <SyntaxHighlighter
+                    style={vscDarkPlus}
+                    language={selectedAsset.type === 'py' ? 'python' : selectedAsset.type === 'sql' ? 'sql' : selectedAsset.type === 'json' ? 'json' : selectedAsset.type === 'tsx' || selectedAsset.type === 'ts' ? 'typescript' : selectedAsset.type === 'md' ? 'markdown' : 'text'}
+                    customStyle={{ margin: 0, padding: '1.5rem', background: 'transparent', minHeight: '100%', fontSize: '13px' }}
+                    showLineNumbers={true}
+                  >
+                    {selectedAsset.content}
+                  </SyntaxHighlighter>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-center p-8 text-white/40">
+                    <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-4 shadow-[inset_0_0_20px_rgba(255,255,255,0.05)]">
+                      {getIcon(selectedAsset.type)}
+                    </div>
+                    <h3 className="text-lg font-bold text-white/70 mb-2">Preview not available</h3>
+                    <p className="text-sm max-w-sm">
+                      Ultron cannot display a preview for this file type natively.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -27,6 +27,8 @@ export type Asset = {
   status: string;
   isFolder?: boolean;
   folderId?: string | null;
+  content?: string;
+  fileUrl?: string;
 };
 
 export type Session = {
@@ -145,11 +147,11 @@ export const useAppStore = create<AppState>()(
   assets: [
     { id: "f1", name: "Training Data", type: "folder", size: "--", date: "Today, 10:00 AM", status: "Indexed", isFolder: true, folderId: null },
     { id: "1", name: "architecture_v2.pdf", type: "pdf", size: "4.2 MB", date: "Today, 10:42 AM", status: "Processed", folderId: null },
-    { id: "2", name: "syslog_export.txt", type: "log", size: "1.1 MB", date: "Today, 09:15 AM", status: "Processed", folderId: null },
-    { id: "3", name: "training_data_batch1.csv", type: "data", size: "128.5 MB", date: "Yesterday", status: "Indexed", folderId: "f1" },
+    { id: "2", name: "syslog_export.txt", type: "log", size: "1.1 MB", date: "Today, 09:15 AM", status: "Processed", folderId: null, content: "Sep 19 09:12:34 ultron-core kernel: [ 12.3456] eth0: link up, 1000Mbps, full-duplex, lpa 0x3800\nSep 19 09:13:01 ultron-core sshd[1234]: Accepted publickey for root from 192.168.1.50 port 54321 ssh2\nSep 19 09:14:22 ultron-core nginx[5678]: 192.168.1.50 - - [19/Sep/2026:09:14:22 +0000] \"GET /api/v1/status HTTP/1.1\" 200 142 \"-\" \"UltronAgent/2.4\"\nSep 19 09:15:00 ultron-core systemd[1]: Started Data Aggregation Pipeline.\nSep 19 09:15:10 ultron-core python3[9999]: [INFO] Model loaded successfully. Ready for inference." },
+    { id: "3", name: "training_data_batch1.csv", type: "data", size: "128.5 MB", date: "Yesterday", status: "Indexed", folderId: "f1", content: "id,feature_1,feature_2,label\n1,0.45,0.89,0\n2,0.12,0.34,1\n3,0.99,0.01,0\n4,0.55,0.55,1\n5,0.78,0.22,1" },
     { id: "4", name: "UI_Mockups.zip", type: "archive", size: "45.0 MB", date: "Oct 24", status: "Scanned", folderId: null },
-    { id: "5", name: "main_controller.py", type: "code", size: "12 KB", date: "Oct 22", status: "Indexed", folderId: null },
-    { id: "6", name: "database_schema.sql", type: "code", size: "8 KB", date: "Oct 21", status: "Indexed", folderId: null },
+    { id: "5", name: "main_controller.py", type: "code", size: "12 KB", date: "Oct 22", status: "Indexed", folderId: null, content: "import os\nimport sys\nimport logging\nfrom core.enclave import SecureEnclave\n\nlogger = logging.getLogger(__name__)\n\ndef initialize_system():\n    \"\"\"Initializes the Ultron local processing core.\"\"\"\n    logger.info(\"Booting Ultron core...\")\n    \n    try:\n        enclave = SecureEnclave(mode='air-gapped')\n        enclave.allocate_memory('16GB')\n        enclave.start_inference_engine()\n        logger.info(\"System initialized successfully.\")\n        return enclave\n    except Exception as e:\n        logger.error(f\"Failed to start: {e}\")\n        sys.exit(1)\n\nif __name__ == '__main__':\n    initialize_system()" },
+    { id: "6", name: "database_schema.sql", type: "code", size: "8 KB", date: "Oct 21", status: "Indexed", folderId: null, content: "CREATE TABLE enclaves (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    name VARCHAR(255) NOT NULL,\n    status VARCHAR(50) DEFAULT 'offline',\n    nodes INTEGER DEFAULT 0,\n    type VARCHAR(100),\n    last_active TIMESTAMP DEFAULT NOW()\n);\n\nCREATE TABLE assets (\n    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),\n    name VARCHAR(255) NOT NULL,\n    type VARCHAR(50),\n    size BIGINT,\n    content_hash VARCHAR(64),\n    uploaded_at TIMESTAMP DEFAULT NOW()\n);\n\nCREATE INDEX idx_enclaves_status ON enclaves(status);\nCREATE INDEX idx_assets_type ON assets(type);" },
   ],
   setAssets: (assets) => set({ assets }),
   addAsset: (asset) => set((state) => ({ assets: [asset, ...state.assets] })),
