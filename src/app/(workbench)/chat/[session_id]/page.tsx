@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect, use } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Paperclip, Send, FileText, Download, FileUp, ImageIcon, Globe, X, ChevronDown, Loader2, BrainCircuit, Folder } from "lucide-react";
 import { useAppStore, Message, Asset } from "@/store/useAppStore";
 
@@ -247,7 +249,32 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
 
                       return (
                         <>
-                          <p className={`text-[15px] leading-relaxed mb-1 ${msg.role === 'user' ? 'text-white/90' : 'text-foreground/90 font-light tracking-wide whitespace-pre-wrap'}`}>{textContent}</p>
+                          <div className={`text-[15px] leading-relaxed mb-1 ${msg.role === 'user' ? 'text-white/90' : 'text-foreground/90 font-light tracking-wide'}`}>
+                            {msg.role === 'user' ? (
+                              <p className="whitespace-pre-wrap">{textContent}</p>
+                            ) : (
+                              <ReactMarkdown 
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                  p: ({node, ...props}) => <p className="mb-3 last:mb-0" {...props} />,
+                                  strong: ({node, ...props}) => <strong className="font-bold text-foreground" {...props} />,
+                                  ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-4 space-y-1" {...props} />,
+                                  ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-4 space-y-1" {...props} />,
+                                  li: ({node, ...props}) => <li className="pl-1" {...props} />,
+                                  h1: ({node, ...props}) => <h1 className="text-2xl font-bold mb-4 mt-6 text-foreground first:mt-0" {...props} />,
+                                  h2: ({node, ...props}) => <h2 className="text-xl font-bold mb-3 mt-5 text-foreground first:mt-0" {...props} />,
+                                  h3: ({node, ...props}) => <h3 className="text-lg font-bold mb-2 mt-4 text-foreground first:mt-0" {...props} />,
+                                  a: ({node, ...props}) => <a className="text-primary hover:underline" {...props} />,
+                                  code: ({node, inline, ...props}: any) => 
+                                    inline 
+                                      ? <code className="bg-muted px-1.5 py-0.5 rounded text-[13px] font-mono text-primary" {...props} />
+                                      : <div className="my-4 overflow-hidden rounded-xl border border-border bg-[#050505]"><div className="px-4 py-2 border-b border-border/50 bg-[#0a0a0a] text-xs font-mono text-muted-foreground">Code Snippet</div><div className="p-4 overflow-x-auto"><code className="text-[13px] font-mono block text-white/90" {...props} /></div></div>,
+                                }}
+                              >
+                                {textContent}
+                              </ReactMarkdown>
+                            )}
+                          </div>
                           {generatedFile && (
                             <div className="bg-background border border-primary/30 rounded-xl p-4 flex flex-col gap-4 mt-4 hover:border-primary transition-colors group relative overflow-hidden">
                               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent -translate-x-[100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
