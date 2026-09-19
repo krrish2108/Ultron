@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ShieldCheck, Cpu, Network, Activity, Server, Database, KeyRound, ChevronLeft } from "lucide-react";
+import { ArrowRight, ShieldCheck, Cpu, Network, Activity, Server, Database, KeyRound, ChevronLeft, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
@@ -138,6 +138,9 @@ export default function LoginPage() {
   const [authState, setAuthState] = useState<AuthState>("LOGIN");
   const [direction, setDirection] = useState<"left" | "right">("left");
   const [authContext, setAuthContext] = useState<"signup" | "reset">("signup"); // Knowing where OTP came from
+  const [loginId, setLoginId] = useState("");
+  const [loginPass, setLoginPass] = useState("");
+  const [loginError, setLoginError] = useState("");
   const [signupId, setSignupId] = useState("");
   const [signupError, setSignupError] = useState("");
 
@@ -152,6 +155,15 @@ export default function LoginPage() {
     }
     setSignupError("");
     navigateTo("OTP", "left", "signup");
+  };
+
+  const handleLogin = () => {
+    if (!loginId.trim() || !loginPass.trim()) {
+      setLoginError("ACCESS DENIED: Enter Ultron ID and Pass Code to enter workbench premises.");
+      return;
+    }
+    setLoginError("");
+    router.push("/home");
   };
 
   const navigateTo = (state: AuthState, dir: "left" | "right", context?: "signup" | "reset") => {
@@ -238,6 +250,8 @@ export default function LoginPage() {
                     <div className="relative">
                       <input 
                         type="text" 
+                        value={loginId}
+                        onChange={(e) => { setLoginId(e.target.value); setLoginError(""); }}
                         placeholder="EMP-8492"
                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[#00f0ff]/50 focus:border-[#00f0ff] transition-all"
                       />
@@ -255,6 +269,8 @@ export default function LoginPage() {
                     <div className="relative">
                       <input 
                         type="password" 
+                        value={loginPass}
+                        onChange={(e) => { setLoginPass(e.target.value); setLoginError(""); }}
                         placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
                         className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[#00f0ff]/50 focus:border-[#00f0ff] transition-all font-mono"
                       />
@@ -262,7 +278,14 @@ export default function LoginPage() {
                     </div>
                   </div>
 
-                  <Button onClick={() => router.push("/home")} className="w-full bg-gradient-to-r from-[#00f0ff] to-blue-600 text-black font-bold hover:opacity-90 py-6 text-lg rounded-xl shadow-[0_0_20px_rgba(0,240,255,0.3)] hover:shadow-[0_0_30px_rgba(0,240,255,0.5)] transition-all group overflow-hidden relative mt-4">
+                  {loginError && (
+                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs font-mono bg-red-500/10 border border-red-500/20 p-3 rounded-lg flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      {loginError}
+                    </motion.div>
+                  )}
+
+                  <Button onClick={handleLogin} className="w-full bg-gradient-to-r from-[#00f0ff] to-blue-600 text-black font-bold hover:opacity-90 py-6 text-lg rounded-xl shadow-[0_0_20px_rgba(0,240,255,0.3)] hover:shadow-[0_0_30px_rgba(0,240,255,0.5)] transition-all group overflow-hidden relative mt-4">
                     <div className="absolute inset-0 bg-white/20 -skew-x-12 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
                     <span className="relative z-10 flex items-center justify-center">
                       Initialize Session
