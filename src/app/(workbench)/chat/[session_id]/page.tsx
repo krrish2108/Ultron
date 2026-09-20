@@ -2,7 +2,11 @@
 
 import { useState, useRef, useEffect, use } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Paperclip, Send, FileText, Download, FileUp, ImageIcon, Globe, X, ChevronDown, Loader2, BrainCircuit, Folder } from "lucide-react";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { Paperclip, Send, FileText, Download, FileUp, ImageIcon, Globe, X, ChevronDown, Loader2, BrainCircuit, Folder, Copy, Check, Terminal } from "lucide-react";
 import { useAppStore, Message, Asset } from "@/store/useAppStore";
 
 
@@ -13,6 +17,48 @@ const COMMAND_SNIPPETS = [
   { id: 's3', command: 'explain', label: 'Explain simply', text: 'Explain the current architecture/code in simple terms.' },
   { id: 's4', command: 'report', label: 'Generate report', text: 'Generate a detailed report based on the provided data.' }
 ];
+
+const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
+  const [copied, setCopied] = useState(false);
+  const match = /language-(\w+)/.exec(className || '');
+  const language = match ? match[1] : '';
+  
+  if (inline) {
+    return <code className="bg-muted px-1.5 py-0.5 rounded text-[13px] font-mono text-primary" {...props}>{children}</code>;
+  }
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(String(children).replace(/\n$/, ''));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="my-4 overflow-hidden rounded-xl border border-border bg-[#050505] shadow-lg group relative">
+      <div className="px-4 py-2 border-b border-border/50 bg-[#0a0a0a] flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Terminal className="w-4 h-4 text-muted-foreground" />
+          <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">{language || 'text'}</span>
+        </div>
+        <button onClick={handleCopy} className="text-muted-foreground hover:text-white transition-colors flex items-center gap-1.5">
+          {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+          <span className="text-[10px] uppercase font-bold tracking-widest">{copied ? 'Copied' : 'Copy'}</span>
+        </button>
+      </div>
+      <div className="text-[13px]">
+        <SyntaxHighlighter
+          style={vscDarkPlus}
+          language={language}
+          PreTag="div"
+          customStyle={{ margin: 0, padding: '1rem', background: 'transparent' }}
+          {...props}
+        >
+          {String(children).replace(/\n$/, '')}
+        </SyntaxHighlighter>
+      </div>
+    </div>
+  );
+};
 
 export default function ChatSession({ params }: { params: Promise<{ session_id: string }> }) {
   const unwrappedParams = use(params);
@@ -247,7 +293,36 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
 
                       return (
                         <>
-                          <p className={`text-[15px] leading-relaxed mb-1 ${msg.role === 'user' ? 'text-white/90' : 'text-foreground/90 font-light tracking-wide whitespace-pre-wrap'}`}>{textContent}</p>
+                          <div className={`text-[15px] leading-relaxed mb-1 ${msg.role === 'user' ? 'text-white/90' : 'text-foreground/90 font-light tracking-wide'}`}>
+                            {msg.role === 'user' ? (
+                              <p className="whitespace-pre-wrap">{textContent}</p>
+                            ) : (
+                              <ReactMarkdown 
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                  p: ({node, ...props}) => <p className="mb-3 last:mb-0" {...props} />,
+                                  strong: ({node, ...props}) => <strong className="font-bold text-foreground" {...props} />,
+                                  ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-4 space-y-1" {...props} />,
+                                  ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-4 space-y-1" {...props} />,
+                                  li: ({node, ...props}) => <li className="pl-1" {...props} />,
+                                  h1: ({node, ...props}) => <h1 className="text-2xl font-bold mb-4 mt-6 text-foreground first:mt-0" {...props} />,
+                                  h2: ({node, ...props}) => <h2 className="text-xl font-bold mb-3 mt-5 text-foreground first:mt-0" {...props} />,
+                                  h3: ({node, ...props}) => <h3 className="text-lg font-bold mb-2 mt-4 text-foreground first:mt-0" {...props} />,
+                                  a: ({node, ...props}) => <a className="text-primary hover:underline" {...props} />,
+                                  table: ({node, ...props}) => <div className="overflow-x-auto my-4 border border-border rounded-xl shadow-sm"><table className="w-full text-left border-collapse" {...props} /></div>,
+                                  thead: ({node, ...props}) => <thead className="bg-accent/50 text-foreground" {...props} />,
+                                  tbody: ({node, ...props}) => <tbody className="divide-y divide-border/50 bg-card/20" {...props} />,
+                                  tr: ({node, ...props}) => <tr className="hover:bg-accent/20 transition-colors" {...props} />,
+                                  th: ({node, ...props}) => <th className="px-4 py-3 text-sm font-bold border-b border-border whitespace-nowrap text-muted-foreground uppercase tracking-wider" {...props} />,
+                                  td: ({node, ...props}) => <td className="px-4 py-3 text-sm border-b border-border/30" {...props} />,
+                                  blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-primary bg-primary/5 px-5 py-3 rounded-r-lg my-4 text-foreground/90 italic shadow-[inset_4px_0_0_var(--color-primary)]" {...props} />,
+                                  code: CodeBlock,
+                                }}
+                              >
+                                {textContent}
+                              </ReactMarkdown>
+                            )}
+                          </div>
                           {generatedFile && (
                             <div className="bg-background border border-primary/30 rounded-xl p-4 flex flex-col gap-4 mt-4 hover:border-primary transition-colors group relative overflow-hidden">
                               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent -translate-x-[100%] group-hover:translate-x-[100%] transition-transform duration-1000" />

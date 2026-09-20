@@ -17,7 +17,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const pathname = usePathname();
   const [leftOpen, setLeftOpen] = useState(true);
-  const [rightOpen, setRightOpen] = useState(true);
+  const [rightOpen, setRightOpen] = useState(false);
   const [comingSoon, setComingSoon] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
