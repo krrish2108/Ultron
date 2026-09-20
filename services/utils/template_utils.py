@@ -12,7 +12,13 @@ from docx import Document as DocxDocument
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 
-from services.utils.config import DOC_GEN_MODEL
+from services.utils.config import (
+    DOC_GEN_MODEL,
+    DOC_GEN_TEMP,
+    DOC_GEN_TOP_K,
+    DOC_GEN_TOP_P,
+    DOC_GEN_REPEAT_PENALTY
+)
 from services.agents.models import DocGenState, PlaceholderValues, BlockContent
 
 
@@ -164,7 +170,22 @@ async def fill_placeholders_node(state: DocGenState) -> dict:
     context_md = state.get("context_md", "")
     message = state.get("message", "")
 
-    llm = ChatOllama(model=DOC_GEN_MODEL, num_ctx=8192, temperature=0.2)
+    context_len = len(context_md)
+    llm_kwargs = {
+        "model": DOC_GEN_MODEL,
+        "temperature": DOC_GEN_TEMP,
+        "top_k": DOC_GEN_TOP_K,
+        "top_p": DOC_GEN_TOP_P,
+        "repeat_penalty": DOC_GEN_REPEAT_PENALTY,
+        "num_ctx": max(8192, (context_len // 4) + 2048)
+    }
+    
+    import os
+    base_url = os.environ.get("OLLAMA_BASE_URL") or os.environ.get("OLLAMA_HOST")
+    if base_url:
+        llm_kwargs["base_url"] = base_url
+        
+    llm = ChatOllama(**llm_kwargs)
     structured_llm = llm.with_structured_output(PlaceholderValues)
 
     print(f"[DOC_GEN] fill_placeholders: filling {len(placeholders)} placeholder(s)")
@@ -217,7 +238,22 @@ async def fill_blocks_node(state: DocGenState) -> dict:
         section_lines.append(f"- {name} ({hint})")
     section_list_text = "\n".join(section_lines)
 
-    llm = ChatOllama(model=DOC_GEN_MODEL, num_ctx=8192, temperature=0.2)
+    context_len = len(context_md)
+    llm_kwargs = {
+        "model": DOC_GEN_MODEL,
+        "temperature": DOC_GEN_TEMP,
+        "top_k": DOC_GEN_TOP_K,
+        "top_p": DOC_GEN_TOP_P,
+        "repeat_penalty": DOC_GEN_REPEAT_PENALTY,
+        "num_ctx": max(8192, (context_len // 4) + 2048)
+    }
+    
+    import os
+    base_url = os.environ.get("OLLAMA_BASE_URL") or os.environ.get("OLLAMA_HOST")
+    if base_url:
+        llm_kwargs["base_url"] = base_url
+        
+    llm = ChatOllama(**llm_kwargs)
     structured_llm = llm.with_structured_output(BlockContent)
 
     print(f"[DOC_GEN] fill_blocks: drafting {len(block_names)} block section(s) "

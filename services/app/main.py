@@ -2,6 +2,8 @@ import asyncio
 import sys
 from pathlib import Path
 
+from services.utils.config import DOC_GEN_MODEL, RAG_MODEL, ROUTER_MODEL
+
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path and project_root.exists():
     sys.path.insert(0, str(project_root))
@@ -50,6 +52,10 @@ def startup_docling():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("[STARTUP] Loading Docling weights...")
+    print(f"[RAG] using model: {RAG_MODEL}")
+    print(f"[SUPERISOR] using model: {ROUTER_MODEL}")
+    print(f"[DOC GEN] using model: {DOC_GEN_MODEL}")
+
     converter = startup_docling()
     # Force weight load by converting a trivial document
     warmup_pdf = Path(__file__).parent / "assets" / "warmup.pdf"

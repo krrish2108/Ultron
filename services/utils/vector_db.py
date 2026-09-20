@@ -1,3 +1,5 @@
+import uuid
+
 from qdrant_client import QdrantClient
 from qdrant_client.models import Fusion, FusionQuery, Prefetch, SparseVector, Distance, VectorParams, PointStruct, SparseVectorParams
 from typing import TYPE_CHECKING, List, Dict, Any, Optional
@@ -127,7 +129,7 @@ class QdrantStorage:
                 chunk_metadata.update(chunk.metadata)
             
             point = PointStruct(
-                id=i,
+                id=uuid.uuid4(),
                 vector={
                     "dense": dense_embedding,
                     "sparse": SparseVector(
@@ -200,12 +202,13 @@ class QdrantStorage:
         results = []
         for point, score in scored[:limit]:
             payload = point.payload or {}
-            results.append({
-                "id": point.id,
-                "text": payload.get("text", ""),
-                "score": float(score),
-                "metadata": {k: v for k, v in payload.items() if k != "text"}
-            })
+            if score > 0.2:
+                results.append({
+                    "id": point.id,
+                    "text": payload.get("text", ""),
+                    "score": float(score),
+                    "metadata": {k: v for k, v in payload.items() if k != "text"}
+                })
         return results
 
 

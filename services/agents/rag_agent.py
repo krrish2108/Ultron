@@ -8,31 +8,14 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 
 from services.agents.models import AgentResponse
-try:
-    from services.utils.config import LLM_MODEL, QDRANT_HOST, QDRANT_PORT
-except ImportError:
-    LLM_MODEL = os.environ.get("LLM_MODEL", "qwen3")
-    QDRANT_HOST = os.environ.get("QDRANT_HOST", "localhost")
-    QDRANT_PORT = int(os.environ.get("QDRANT_PORT", "6333"))
+from services.utils.config import RAG_MODEL, RAG_REPEAT_PENALTY, RAG_TEMP, RAG_TOP_K, RAG_TOP_P
+from services.utils.config import  QDRANT_HOST, QDRANT_PORT
 
-try:
-    from services.utils.vector_db import QdrantStorage
-except ImportError:
-    QdrantStorage = None  # type: ignore[assignment]
+from services.utils.vector_db import QdrantStorage
+
 
 
 # Ollama is expected to run as its own service (see docker-compose.yml) or locally.
-def _default_ollama_url() -> str:
-    env_url = os.environ.get("OLLAMA_BASE_URL") or os.environ.get("OLLAMA_HOST")
-    if env_url:
-        return env_url
-    if os.path.exists("/.dockerenv") or os.environ.get("IN_DOCKER"):
-        return "http://ollama:11434"
-    return "http://localhost:11434"
-
-
-OLLAMA_BASE_URL = _default_ollama_url()
-DEFAULT_MODEL = os.environ.get("LLM_MODEL", LLM_MODEL if LLM_MODEL else "qwen3")
 
 SYSTEM_PROMPT = (
     "You are a private, on-premise assistant for the Sovereign AI "
@@ -48,6 +31,22 @@ SYSTEM_PROMPT = (
     "the context word-for-word. Keep the answer clear and easy to "
     "understand. "
 
+    "You need to generate markdown form answers only not in any other form "
+    
+    "## Section types"
+    """
+    - **Title**: The main title of the document. Use exactly one at the top.
+    - **Heading**: Major section headings (equivalent to ##).
+    - **Subtitle**: Sub-headings (equivalent to ###).
+    - **Paragraph**: Standard prose text. Synthesize and write coherent paragraphs answering the user prompt.
+    - **BulletList**: A markdown-formatted bullet list (`- item`). Use for key takeaways, extracted rules, or unordered lists.
+    - **NumberedList**: A markdown-formatted numbered list (`1. item`). Use for sequential steps or ranked items.
+    - **Table**: A markdown table (must include header row and separators). Use for structured data comparison.
+    - **BlockQuote**: A markdown quote (`> quote`). Use for citing important rules, legal text, or emphasis.
+    - **CodeBlock**: A markdown code block (``` ... ```). Use for code snippets or raw technical data.
+    - **Section**: Any other miscellaneous markdown text."""
+
+
     "Do not add information that is not present in the context. "
     "If the context does not contain enough information, say so plainly "
     "instead of guessing. "
@@ -57,88 +56,12 @@ SYSTEM_PROMPT = (
 )
 
 
-# Retrieval contract: Chunk dataclass & search_documents
-try:
-    from qdrant import Chunk, search_documents  # type: ignore
-except ImportError:
-    @dataclass
-    class Chunk:
-        """A single retrieved, reranked chunk with a clean source reference."""
-        text: str
-        score: float = 0.0
-        rerank_score: float = 0.0
-        source: Dict[str, Any] = field(default_factory=dict)
-        id: Optional[Any] = None
-
-    def search_documents(
-        query: str,
-        top_k: int = 5,
-        collection: str = "documents",
-    ) -> List[Chunk]:
-        """
-        Search the knowledge base using Qdrant vector database with hybrid
-        retrieval (dense + sparse) and Cross-Encoder reranking via QdrantStorage.
-        Returns structured Chunk objects conforming to Palak's retrieval contract.
-        """
-        if QdrantStorage is None:
-            print("[RAG] QdrantStorage is not available.")
-            return []
-
-        try:
-            vector_db = QdrantStorage(host=QDRANT_HOST, port=QDRANT_PORT)
-            raw_results = vector_db.query(query, collection=collection, limit=top_k)
-            chunks: List[Chunk] = []
-            for res in raw_results:
-                metadata = dict(res.get("metadata", {}))
-                score = float(res.get("score", 0.0))
-                if "score" not in metadata:
-                    metadata["score"] = score
-                if "rerank_score" not in metadata:
-                    metadata["rerank_score"] = score
-                if "document_id" not in metadata and "id" in res:
-                    metadata["document_id"] = res.get("id")
-
-                chunks.append(
-                    Chunk(
-                        text=res.get("text", ""),
-                        source=metadata,
-                        score=score,
-                        rerank_score=score,
-                        id=res.get("id"),
-                    )
-                )
-            return chunks
-        except Exception as e:
-            print(f"[RAG] Search documents error: {e}")
-            return []
-
-
-def search_knowledge_base(
-    query: str,
-    collection: str = "documents",
-    limit: int = 5,
-) -> str:
-    """
-    Search the knowledge base using Qdrant vector database.
-    Returns formatted relevant document chunks.
-    """
-    chunks = search_documents(query, top_k=limit, collection=collection)
-    if not chunks:
-        return "No relevant documents found in the knowledge base."
-
-    formatted_results = []
-    for i, chunk in enumerate(chunks, 1):
-        formatted_results.append(
-            f"--- Result {i} (score: {chunk.score:.3f}) ---\n{chunk.text}\n"
-        )
-    return "\n".join(formatted_results)
-
 
 class RagState(TypedDict, total=False):
     collection: str
     query: str
     rerank_limit: int
-    chunks: List[Chunk]
+    chunks: List[Dict[str, Any]]
     context: str
     sources: List[Dict[str, Any]]
     answer: str
@@ -160,11 +83,8 @@ def search_node(state: RagState) -> RagState:
 
     print(f"[RAG] RAG searching for: {query}")
     try:
-        chunks = search_documents(
-            query=query,
-            top_k=rerank_limit,
-            collection=collection,
-        )
+        vector_db = QdrantStorage(host=QDRANT_HOST, port=QDRANT_PORT)
+        chunks = vector_db.query(query, collection=collection, limit=rerank_limit)
     except Exception as e:
         print(f"[RAG] Search error in search_node: {e}")
         chunks = []
@@ -175,48 +95,29 @@ def search_node(state: RagState) -> RagState:
     sources = []
 
     for i, chunk in enumerate(chunks, start=1):
-        context_blocks.append(f"[{i}] {chunk.text}")
-        source_dict = dict(getattr(chunk, "source", {}))
-        score_val = getattr(chunk, "score", 0.0)
-        rerank_val = getattr(chunk, "rerank_score", score_val)
+        text = chunk.get("text", "")
+        context_blocks.append(f"[{i}] {text}")
+        metadata = chunk.get("metadata", {})
+        score_val = float(chunk.get("score", 0.0))
+        
+        # Match the old fields
+        if "score" not in metadata:
+            metadata["score"] = score_val
+        if "rerank_score" not in metadata:
+            metadata["rerank_score"] = score_val
+        if "document_id" not in metadata and "id" in chunk:
+            metadata["document_id"] = chunk["id"]
 
         sources.append({
             "marker": i,
-            "text": chunk.text,
+            "text": text,
             "score": score_val,
-            "rerank_score": rerank_val,
-            **source_dict,
+            "rerank_score": score_val,
+            **metadata,
         })
 
     state["context"] = "\n\n".join(context_blocks)
     state["sources"] = sources
-    state["search_results"] = state["context"]
-    print(f"[RAG] Found {len(chunks)} chunks ({len(state['context'])} chars)")
-    return state
-
-
-def write_context_node(state: RagState) -> RagState:
-    """Write search results/context to data/context.md and ./context.md for downstream agents."""
-    context_content = state.get("context", "") or state.get("search_results", "")
-
-    # 1. Prototype project layout (data/context.md)
-    try:
-        project_root = Path(__file__).resolve().parent.parent.parent
-        data_dir = project_root / "data"
-        if data_dir.exists() or (project_root / "Services").exists():
-            data_dir.mkdir(parents=True, exist_ok=True)
-            context_path = data_dir / "context.md"
-            context_path.write_text(context_content, encoding="utf-8")
-            print(f"[RAG] Wrote {len(context_content)} chars to {context_path}")
-    except Exception as e:
-        print(f"[RAG] Notice: data/context.md write skipped: {e}")
-
-    # 2. Local context.md (for container or root execution)
-    try:
-        local_context = Path("context.md")
-        local_context.write_text(context_content, encoding="utf-8")
-    except Exception:
-        pass
 
     return state
 
@@ -225,23 +126,21 @@ def generate_node(state: RagState) -> RagState:
     """Generate answer from context with citations or return clean fallback if empty."""
     if not state.get("chunks"):
         state["answer"] = (
-            "I couldn't find anything relevant in the knowledge base "
-            "for that question."
+            "RAG Agent couldn't find anything relevant in the knowledge base for that question."
         )
         return state
-
-    llm_kwargs: Dict[str, Any] = {
-        "model": DEFAULT_MODEL,
-        "temperature": 0,
-    }
-    if OLLAMA_BASE_URL:
-        llm_kwargs["base_url"] = OLLAMA_BASE_URL
+    print("[RAG] Generating Summary")    
 
     context_len = len(state.get("context", ""))
     if context_len > 0:
-        llm_kwargs["num_ctx"] = max(2048, context_len + 1000)
+        num_ctx = max(2048, (context_len//4) + 1000)
 
-    llm = ChatOllama(**llm_kwargs)
+    llm = ChatOllama(model=RAG_MODEL,
+                     temperature=RAG_TEMP,
+                     top_k=RAG_TOP_K,
+                     top_p=RAG_TOP_P,
+                     num_ctx=num_ctx,
+                     repeat_penalty=RAG_REPEAT_PENALTY)
 
     messages = [
         SystemMessage(content=SYSTEM_PROMPT),
@@ -256,6 +155,7 @@ def generate_node(state: RagState) -> RagState:
     try:
         response = llm.invoke(messages)
         state["answer"] = str(response.content)
+        print(response)
     except Exception as e:
         print(f"[RAG] Generation error in generate_node: {e}")
         state["answer"] = f"Unable to generate response from model: {e}"
@@ -268,12 +168,10 @@ def build_rag_agent():
     """Build and compile the LangGraph RAG workflow."""
     graph = StateGraph(RagState)
     graph.add_node("search", search_node)
-    graph.add_node("write_context", write_context_node)
     graph.add_node("generate", generate_node)
 
     graph.add_edge(START, "search")
-    graph.add_edge("search", "write_context")
-    graph.add_edge("write_context", "generate")
+    graph.add_edge("search", "generate")
     graph.add_edge("generate", END)
 
     return graph.compile()
@@ -284,86 +182,6 @@ _agent = build_rag_agent()
 rag_graph = _agent  # Backward compatibility alias
 
 
-def create_markdown(
-    query: str,
-    answer: str,
-    sources: List[Dict[str, Any]],
-) -> str:
-    """Format search results into a clean, comprehensive Markdown report."""
-    md = "# Sovereign Search Result\n\n"
-    md += f"**Query:** {query}\n\n"
-    md += "## Answer\n\n"
-    md += f"{answer}\n\n"
-
-    if sources:
-        md += "## Sources\n\n"
-        for i, source in enumerate(sources, start=1):
-            marker = source.get("marker", i)
-            md += f"### [{marker}] Result {i}\n\n"
-
-            if "text" in source:
-                md += f"**text:** {source['text']}\n\n"
-
-            for field_name in ("document_id", "file_name", "filename", "title", "source"):
-                if field_name in source and source[field_name] is not None:
-                    md += f"**{field_name}:** {source[field_name]}\n\n"
-
-            if "rerank_score" in source and source["rerank_score"] is not None:
-                try:
-                    md += f"**rerank_score:** {float(source['rerank_score']):.4f}\n\n"
-                except (ValueError, TypeError):
-                    md += f"**rerank_score:** {source['rerank_score']}\n\n"
-            elif "score" in source and source["score"] is not None:
-                try:
-                    md += f"**score:** {float(source['score']):.4f}\n\n"
-                except (ValueError, TypeError):
-                    md += f"**score:** {source['score']}\n\n"
-
-    return md
-
-
-def run_rag_agent(
-    collection: str = "documents",
-    query: str = "",
-    rerank_limit: int = 5,
-) -> Dict[str, Any]:
-    """Functional entrypoint for executing the RAG agent pipeline."""
-    initial_state: RagState = {
-        "collection": collection,
-        "query": query,
-        "rerank_limit": rerank_limit,
-        "chunks": [],
-        "context": "",
-        "sources": [],
-        "answer": "",
-        "search_results": "",
-        "markdown": "",
-    }
-
-    try:
-        final_state = _agent.invoke(initial_state)
-    except Exception as e:
-        print(f"[RAG] Workflow error in run_rag_agent: {e}")
-        fallback_answer = "I couldn't find anything relevant in the knowledge base for that question."
-        return {
-            "answer": fallback_answer,
-            "sources": [],
-            "markdown": create_markdown(query, fallback_answer, []),
-            "context": "",
-        }
-
-    markdown = create_markdown(
-        final_state.get("query", query),
-        final_state.get("answer", ""),
-        final_state.get("sources", []),
-    )
-
-    return {
-        "answer": final_state.get("answer", ""),
-        "sources": final_state.get("sources", []),
-        "markdown": markdown,
-        "context": final_state.get("context", ""),
-    }
 
 
 class RAGAgent:
@@ -408,12 +226,6 @@ class RAGAgent:
             context = final_state.get("context", "")
             sources = final_state.get("sources", [])
 
-            markdown = create_markdown(
-                final_state.get("query", query),
-                answer,
-                sources,
-            )
-
             no_results = (
                 not chunks
                 or not context
@@ -424,7 +236,7 @@ class RAGAgent:
                 agent="rag",
                 status="no_results" if no_results else "success",
                 content=answer,
-                search_results=markdown if markdown else context,
+                search_results=final_state["answer"] 
             )
         except Exception as e:
             print(f"[RAG] Error in RAGAgent.run: {e}")

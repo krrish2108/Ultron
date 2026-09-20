@@ -53,3 +53,7 @@ venv/
 data/context.md
 
 models*
+output_*.docx
+*.docs
+
+data/uploads/documents/

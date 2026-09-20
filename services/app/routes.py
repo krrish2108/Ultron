@@ -114,6 +114,29 @@ async def ingest_file(request: Request, file: UploadFile = File(...)):
         logger.error(f"Ingest error for file {file.filename}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/upload_to_rag")
+async def upload_to_rag(request: Request, file: UploadFile = File(...)):
+    """
+    Ingests document via docling, chunks using HybridChunker, and
+    uploads the chunks directly to Qdrant vector database.
+    """
+    from services.utils.rag_upload import handle_rag_upload
+    try:
+        metadata = {}
+        # Run this in a threadpool to not block the event loop
+        inserted_count = await asyncio.to_thread(handle_rag_upload, file,  request.app.state.converter, metadata)
+        
+        logger.info(f"RAG upload successful for file: {file.filename}. Inserted {inserted_count} chunks.")
+        
+        return {
+            "status": "ok",
+            "filename": file.filename,
+            "inserted_chunks": inserted_count
+        }
+    except Exception as e:
+        logger.error(f"RAG upload error for file {file.filename}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.delete("/context")
 async def clear_context():
     """Clear context.md to start fresh."""

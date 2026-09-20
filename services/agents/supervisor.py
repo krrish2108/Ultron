@@ -33,8 +33,11 @@ class Supervisor:
         self.llm = ChatOllama(
             model=ROUTER_MODEL,
             reasoning=LLM_REASONING,
+            keep_alive='30m'
         )
         self.router = self.llm.with_structured_output(RouteDecision)
+        self.rag_context = ""
+
 
     def _classify(self, message: str) -> RouteDecision:
         """Use the LLM to classify user intent."""
@@ -67,6 +70,10 @@ class Supervisor:
 
         response = await self._dispatch(intent, message, context, template_path)
 
+        if intent == "rag" and response.status == "success":
+            self.rag_context = response.content
+            asyncio.create_task(broadcaster.broadcast("agentTrace", f"  Saved RAG summary to Supervisor state for subsequent document generation."))
+
         # One bounded follow-up: if the agent signals it needs one, honour it.
         if response.needs_followup and response.followup_hint == "doc_gen":
             print("[SUPERVISOR] Chaining follow-up: doc_gen")
@@ -80,15 +87,21 @@ class Supervisor:
         self, intent: str, message: str, context: str, template_path: str | None = None,
     ) -> AgentResponse:
         """Run the agent for the given intent and return its AgentResponse."""
+        from services.utils.broadcaster import broadcaster
+        import asyncio
+
         if intent == "rag":
             from services.agents.rag_agent import RAGAgent
             agent = RAGAgent()
+            asyncio.create_task(broadcaster.broadcast("agentTrace", f"> [EXEC] Handing off to RAG Agent..."))
             return await agent.run(message)
 
         elif intent == "doc_gen":
             from services.agents.doc_gen_agent import DocGenAgent
             agent = DocGenAgent()
-            return await agent.run(message, context, template_path=template_path)
+            effective_context = context if context else self.rag_context
+            asyncio.create_task(broadcaster.broadcast("agentTrace", f"> [EXEC] Handing off to DocGen Agent (Context len: {len(effective_context)} chars)..."))
+            return await agent.run(message, effective_context, template_path=template_path)
 
         else:
             # General chat — no agent, just the LLM directly.
