@@ -77,8 +77,10 @@ export default function AssetsPage() {
           
           if (isImage || isPdf) {
             fileUrl = URL.createObjectURL(f);
-          } else if (f.size < 5 * 1024 * 1024 && !f.name.match(/\.(zip|tar|gz|bin|exe|dll)$/i)) { 
+          } else if (f.size < 5 * 1024 * 1024 && !f.name.match(/\.(zip|tar|gz|bin|exe|dll|ppt|pptx|doc|docx|xls|xlsx)$/i)) { 
             content = await f.text();
+          } else {
+            fileUrl = URL.createObjectURL(f);
           }
 
           return {
@@ -416,7 +418,7 @@ export default function AssetsPage() {
                     className="w-full h-full border-0 bg-[#323639]" 
                     title={selectedAsset.name} 
                   />
-                ) : selectedAsset.fileUrl ? (
+                ) : selectedAsset.fileUrl && selectedAsset.type.match(/^(jpg|jpeg|png|gif|webp|svg|bmp)$/i) ? (
                   <div className="flex items-center justify-center min-h-full p-8 min-w-max" style={{ transform: `scale(${zoom})`, transformOrigin: 'center', transition: 'transform 0.2s ease-out' }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={selectedAsset.fileUrl} alt={selectedAsset.name} className="max-w-full max-h-full object-contain rounded-xl shadow-lg border border-white/10" />
@@ -485,7 +487,11 @@ export default function AssetsPage() {
                         </div>
                         <div>
                           <div className="text-xs font-bold text-red-500 tracking-wider">UNRECOGNIZED FORMAT</div>
-                          <div className="text-[10px] text-white/40 font-mono mt-0.5">Attempting brute-force decryption...</div>
+                          <div className="text-[10px] text-white/40 font-mono mt-1">
+                            {selectedAsset.name.match(/\.(ppt|pptx|doc|docx|xls|xlsx)$/i) 
+                              ? "Browser preview is not supported for Office documents. Please convert this file to a PDF format and re-upload it for seamless viewing."
+                              : "Attempting brute-force decryption..."}
+                          </div>
                         </div>
                       </div>
                       <button className="bg-[#00f0ff]/10 hover:bg-[#00f0ff]/20 text-[#00f0ff] border border-[#00f0ff]/30 py-2 px-4 rounded-lg text-xs font-bold tracking-wider transition-all shadow-[0_0_15px_rgba(0,240,255,0.1)]">
