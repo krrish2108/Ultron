@@ -18,6 +18,7 @@ export default function AssetsPage() {
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [assetToDelete, setAssetToDelete] = useState<string | null>(null);
   
   const [zoom, setZoom] = useState(1);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -119,7 +120,14 @@ export default function AssetsPage() {
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    deleteAsset(id);
+    setAssetToDelete(id);
+  };
+
+  const confirmDeleteAsset = () => {
+    if (assetToDelete) {
+      deleteAsset(assetToDelete);
+      setAssetToDelete(null);
+    }
   };
 
   const getIcon = (type: string, isFolder?: boolean) => {
@@ -500,6 +508,46 @@ export default function AssetsPage() {
                     </div>
                   </div>
                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* DELETE CONFIRMATION MODAL */}
+      <AnimatePresence>
+        {assetToDelete && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setAssetToDelete(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-[#0a0a0a] border border-red-500/30 rounded-3xl p-8 max-w-sm w-full text-center relative overflow-hidden shadow-[0_0_50px_rgba(239,68,68,0.1)]"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="absolute inset-0 bg-gradient-to-tr from-red-500/10 to-transparent opacity-50" />
+              <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-6 relative z-10">
+                <Trash2 className="w-8 h-8 text-red-500" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2 relative z-10">Delete Asset?</h2>
+              <p className="text-white/50 text-sm mb-8 relative z-10">
+                Are you sure you want to permanently delete this asset? This action cannot be undone.
+              </p>
+              <div className="flex gap-3 relative z-10">
+                <button suppressHydrationWarning 
+                  onClick={() => setAssetToDelete(null)}
+                  className="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all rounded-xl text-sm font-bold text-white"
+                >
+                  Cancel
+                </button>
+                <button suppressHydrationWarning 
+                  onClick={confirmDeleteAsset}
+                  className="flex-1 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-500 border border-red-500/50 hover:shadow-[0_0_20px_rgba(239,68,68,0.3)] transition-all rounded-xl text-sm font-bold"
+                >
+                  Delete
+                </button>
               </div>
             </motion.div>
           </motion.div>

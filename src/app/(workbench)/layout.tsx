@@ -21,6 +21,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
   const [comingSoon, setComingSoon] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
 
   const recentSessions = useAppStore(state => state.sessions);
   const setSettingsOpen = useAppStore(state => state.setSettingsOpen);
@@ -46,6 +47,14 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
       case "active": return <div className="w-2 h-2 rounded-full bg-[#00f0ff] shadow-[0_0_8px_rgba(0,240,255,0.8)] animate-pulse" />;
       case "progress": return <div className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.8)]" />;
       default: return null;
+    }
+  };
+
+  const confirmDeleteSession = () => {
+    if (sessionToDelete) {
+      deleteSession(sessionToDelete);
+      if (pathname.includes(sessionToDelete)) router.push('/home');
+      setSessionToDelete(null);
     }
   };
 
@@ -170,8 +179,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          deleteSession(session.id);
-                          if (pathname.includes(session.id)) router.push('/home');
+                          setSessionToDelete(session.id);
                         }}
                         className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 text-red-400 rounded transition-all"
                       >
@@ -402,6 +410,46 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
               >
                 Acknowledge
               </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* DELETE CONFIRMATION MODAL */}
+      <AnimatePresence>
+        {sessionToDelete && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setSessionToDelete(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-[#0a0a0a] border border-red-500/30 rounded-3xl p-8 max-w-sm w-full text-center relative overflow-hidden shadow-[0_0_50px_rgba(239,68,68,0.1)]"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="absolute inset-0 bg-gradient-to-tr from-red-500/10 to-transparent opacity-50" />
+              <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-6 relative z-10">
+                <Trash2 className="w-8 h-8 text-red-500" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-2 relative z-10">Delete Task?</h2>
+              <p className="text-white/50 text-sm mb-8 relative z-10">
+                Are you sure you want to permanently delete this task? This action cannot be undone.
+              </p>
+              <div className="flex gap-3 relative z-10">
+                <button suppressHydrationWarning 
+                  onClick={() => setSessionToDelete(null)}
+                  className="flex-1 py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all rounded-xl text-sm font-bold text-white"
+                >
+                  Cancel
+                </button>
+                <button suppressHydrationWarning 
+                  onClick={confirmDeleteSession}
+                  className="flex-1 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-500 border border-red-500/50 hover:shadow-[0_0_20px_rgba(239,68,68,0.3)] transition-all rounded-xl text-sm font-bold"
+                >
+                  Delete
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
