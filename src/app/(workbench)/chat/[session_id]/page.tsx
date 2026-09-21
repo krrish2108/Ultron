@@ -22,7 +22,7 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
   const [copied, setCopied] = useState(false);
   const match = /language-(\w+)/.exec(className || '');
   const language = match ? match[1] : '';
-  
+
   if (inline) {
     return <code className="bg-muted px-1.5 py-0.5 rounded text-[13px] font-mono text-primary" {...props}>{children}</code>;
   }
@@ -65,7 +65,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
   const sessionId = unwrappedParams.session_id;
 
   const [inputText, setInputText] = useState("");
-  const [attachments, setAttachments] = useState<{name: string, type: string}[]>([]);
+  const [attachments, setAttachments] = useState<{ name: string, type: string }[]>([]);
   const [showAttachMenu, setShowAttachMenu] = useState(false);
   const [showModelMenu, setShowModelMenu] = useState(false);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
@@ -94,27 +94,27 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
       if (lastMessage.role === 'user') {
         const expectedBotMsgId = "bot-" + lastMessage.id;
         const botHasReplied = messages.some(m => m.id === expectedBotMsgId);
-        
+
         if (!botHasReplied && replyingToRef.current !== lastMessage.id) {
           replyingToRef.current = lastMessage.id;
           addMessageToSession(sessionId, { id: expectedBotMsgId, role: "assistant", content: "", status: "loading", loadingText: "Connecting to Ultron Core..." });
-          
+
           const fetchChatStream = async () => {
             try {
               updateMessageInSession(sessionId, expectedBotMsgId, { loadingText: "Synthesizing response..." });
-              
+
               const response = await fetch("http://localhost:8000/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ message: lastMessage.content })
               });
-              
+
               if (!response.body) throw new Error("No response body");
-              
+
               const reader = response.body.getReader();
               const decoder = new TextDecoder("utf-8");
               let fullText = "";
-              
+
               updateMessageInSession(sessionId, expectedBotMsgId, { status: "done", content: "" });
 
               while (true) {
@@ -123,11 +123,11 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                 fullText += decoder.decode(value, { stream: true });
                 updateMessageInSession(sessionId, expectedBotMsgId, { content: fullText });
               }
-              
+
             } catch (error) {
               console.error(error);
-              updateMessageInSession(sessionId, expectedBotMsgId, { 
-                status: "done", 
+              updateMessageInSession(sessionId, expectedBotMsgId, {
+                status: "done",
                 content: "Failed to connect to backend server. Make sure the FastAPI python server is running on localhost:8000.",
                 loadingText: undefined
               });
@@ -138,7 +138,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
         }
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages.length, sessionId]);
 
   const handlePaste = (e: React.ClipboardEvent) => {
@@ -161,11 +161,11 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
       const newFiles = files.map(f => ({ name: f.name, type: f.type }));
       setAttachments(prev => [...prev, ...newFiles]);
       setShowAttachMenu(false);
-      
+
       for (const file of files) {
         const formData = new FormData();
         formData.append("file", file);
-        
+
         try {
           const endpoint = "/ingest";
           await fetch(`http://localhost:8000${endpoint}`, {
@@ -227,7 +227,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
     } else {
       setAttachments(prev => [...prev, { name: asset.name, type: asset.type }]);
     }
-    
+
     setInputText(prev => prev.replace(/(?:\s|^)\/[^\s]*$/, ' '));
     setShowSlashMenu(false);
     setSlashQuery("");
@@ -241,7 +241,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
 
   return (
     <div className="flex-1 flex flex-col h-full relative" onClick={() => { setShowAttachMenu(false); setShowModelMenu(false); setShowSlashMenu(false); }}>
-      
+
       {/* Top Header */}
       <div className="h-14 border-b border-border/50 flex items-center justify-between px-6 shrink-0 bg-background/80 backdrop-blur-md sticky top-0 z-10">
         <h2 className="font-bold text-sm text-foreground/90 truncate cursor-pointer hover:text-foreground transition-colors">
@@ -261,11 +261,11 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
       <div className="flex-1 overflow-y-auto p-6 no-scrollbar relative">
         {/* Ambient Glowing Background */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] pointer-events-none opacity-50 animate-pulse" />
-        
+
         <div className="max-w-4xl mx-auto space-y-10 pb-10 relative z-10 pt-4">
           {messages.map((msg) => (
             <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              
+
               {msg.role === 'assistant' && (
                 <div className="w-10 h-10 rounded-xl bg-card backdrop-blur-md border border-border flex items-center justify-center shrink-0 mr-4 shadow-[0_0_15px_var(--color-primary)] relative">
                   <div className="absolute inset-0 bg-primary/20 rounded-xl animate-pulse blur-md" />
@@ -273,11 +273,10 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                 </div>
               )}
 
-              <div className={`${
-                msg.role === 'user' 
-                  ? 'bg-gradient-to-tr from-primary to-blue-600 text-white px-6 py-4 rounded-3xl rounded-tr-sm max-w-[80%] shadow-[0_0_25px_var(--color-primary)] font-medium' 
-                  : 'bg-card backdrop-blur-2xl border border-border text-foreground px-6 py-5 rounded-3xl rounded-tl-sm max-w-[85%] shadow-sm'
-              }`}>
+              <div className={`${msg.role === 'user'
+                ? 'bg-gradient-to-tr from-primary to-blue-600 text-white px-6 py-4 rounded-3xl rounded-tr-sm max-w-[80%] shadow-[0_0_25px_var(--color-primary)] font-medium'
+                : 'bg-card backdrop-blur-2xl border border-border text-foreground px-6 py-5 rounded-3xl rounded-tl-sm max-w-[85%] shadow-sm'
+                }`}>
                 {msg.status === 'loading' ? (
                   <div className="flex items-center gap-4">
                     <Loader2 className="w-5 h-5 text-primary animate-spin" />
@@ -287,7 +286,10 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                   <>
                     {(() => {
                       const fileMatch = msg.content.match(/\n\nFile: (.*)$/);
-                      const textContent = fileMatch ? msg.content.replace(fileMatch[0], '') : msg.content;
+                      let textContent = fileMatch ? msg.content.replace(fileMatch[0], '') : msg.content;
+
+                      textContent = textContent.replace(/\\n/g, '\n');
+
                       const generatedFile = fileMatch ? fileMatch[1] : null;
                       const fileName = generatedFile ? generatedFile.split(/[/\\]/).pop() || "Document" : "";
 
@@ -297,25 +299,25 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                             {msg.role === 'user' ? (
                               <p className="whitespace-pre-wrap">{textContent}</p>
                             ) : (
-                              <ReactMarkdown 
+                              <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
                                 components={{
-                                  p: ({node, ...props}) => <p className="mb-3 last:mb-0" {...props} />,
-                                  strong: ({node, ...props}) => <strong className="font-bold text-foreground" {...props} />,
-                                  ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-4 space-y-1" {...props} />,
-                                  ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-4 space-y-1" {...props} />,
-                                  li: ({node, ...props}) => <li className="pl-1" {...props} />,
-                                  h1: ({node, ...props}) => <h1 className="text-2xl font-bold mb-4 mt-6 text-foreground first:mt-0" {...props} />,
-                                  h2: ({node, ...props}) => <h2 className="text-xl font-bold mb-3 mt-5 text-foreground first:mt-0" {...props} />,
-                                  h3: ({node, ...props}) => <h3 className="text-lg font-bold mb-2 mt-4 text-foreground first:mt-0" {...props} />,
-                                  a: ({node, ...props}) => <a className="text-primary hover:underline" {...props} />,
-                                  table: ({node, ...props}) => <div className="overflow-x-auto my-4 border border-border rounded-xl shadow-sm"><table className="w-full text-left border-collapse" {...props} /></div>,
-                                  thead: ({node, ...props}) => <thead className="bg-accent/50 text-foreground" {...props} />,
-                                  tbody: ({node, ...props}) => <tbody className="divide-y divide-border/50 bg-card/20" {...props} />,
-                                  tr: ({node, ...props}) => <tr className="hover:bg-accent/20 transition-colors" {...props} />,
-                                  th: ({node, ...props}) => <th className="px-4 py-3 text-sm font-bold border-b border-border whitespace-nowrap text-muted-foreground uppercase tracking-wider" {...props} />,
-                                  td: ({node, ...props}) => <td className="px-4 py-3 text-sm border-b border-border/30" {...props} />,
-                                  blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-primary bg-primary/5 px-5 py-3 rounded-r-lg my-4 text-foreground/90 italic shadow-[inset_4px_0_0_var(--color-primary)]" {...props} />,
+                                  p: ({ node, ...props }) => <p className="mb-3 last:mb-0" {...props} />,
+                                  strong: ({ node, ...props }) => <strong className="font-bold text-foreground" {...props} />,
+                                  ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-4 space-y-1" {...props} />,
+                                  ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-4 space-y-1" {...props} />,
+                                  li: ({ node, ...props }) => <li className="pl-1" {...props} />,
+                                  h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mb-4 mt-6 text-foreground first:mt-0" {...props} />,
+                                  h2: ({ node, ...props }) => <h2 className="text-xl font-bold mb-3 mt-5 text-foreground first:mt-0" {...props} />,
+                                  h3: ({ node, ...props }) => <h3 className="text-lg font-bold mb-2 mt-4 text-foreground first:mt-0" {...props} />,
+                                  a: ({ node, ...props }) => <a className="text-primary hover:underline" {...props} />,
+                                  table: ({ node, ...props }) => <div className="overflow-x-auto my-4 border border-border rounded-xl shadow-sm"><table className="w-full text-left border-collapse" {...props} /></div>,
+                                  thead: ({ node, ...props }) => <thead className="bg-accent/50 text-foreground" {...props} />,
+                                  tbody: ({ node, ...props }) => <tbody className="divide-y divide-border/50 bg-card/20" {...props} />,
+                                  tr: ({ node, ...props }) => <tr className="hover:bg-accent/20 transition-colors" {...props} />,
+                                  th: ({ node, ...props }) => <th className="px-4 py-3 text-sm font-bold border-b border-border whitespace-nowrap text-muted-foreground uppercase tracking-wider" {...props} />,
+                                  td: ({ node, ...props }) => <td className="px-4 py-3 text-sm border-b border-border/30" {...props} />,
+                                  blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-primary bg-primary/5 px-5 py-3 rounded-r-lg my-4 text-foreground/90 italic shadow-[inset_4px_0_0_var(--color-primary)]" {...props} />,
                                   code: CodeBlock,
                                 }}
                               >
@@ -338,15 +340,15 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <button onClick={() => {
-                                      useAppStore.getState().addAsset({
-                                        id: Date.now().toString(),
-                                        name: fileName,
-                                        type: "document",
-                                        size: "--",
-                                        date: "Just now",
-                                        status: "Saved",
-                                      });
-                                    }} 
+                                    useAppStore.getState().addAsset({
+                                      id: Date.now().toString(),
+                                      name: fileName,
+                                      type: "document",
+                                      size: "--",
+                                      date: "Just now",
+                                      status: "Saved",
+                                    });
+                                  }}
                                     className="px-3 py-1.5 rounded-lg bg-accent/50 border border-border hover:bg-accent text-xs font-medium text-foreground/70 hover:text-foreground hover:border-border/80 transition-all flex items-center gap-2 whitespace-nowrap"
                                   >
                                     <Folder className="w-3.5 h-3.5" /> Save to Assets
@@ -392,140 +394,140 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
             <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
               <div className="absolute top-1/2 left-1/2 w-[3000px] h-[3000px] -translate-x-1/2 -translate-y-1/2 animate-[spin_5s_linear_infinite] bg-[conic-gradient(from_0deg,transparent_0%,transparent_30%,#00f0ff_49.5%,#ffffff_50%,transparent_50.5%,transparent_80%,#00f0ff_99.5%,#ffffff_100%)] opacity-100 transition-opacity duration-500" />
             </div>
-            
+
             {/* Inner background to preserve dark input area */}
             <div className="absolute inset-[1px] bg-background/90 backdrop-blur-3xl rounded-[15px] pointer-events-none border border-border/50" />
 
             {/* Content Container (Not clipped, allows popups) */}
             <div className="relative z-10 flex flex-col p-3">
-            
-            {/* Attached Files Display */}
-            {attachments.length > 0 && (
-              <div className="flex flex-wrap gap-2 p-2 mb-2 border-b border-border/50">
-                {attachments.map((file, idx) => (
-                  <div key={idx} className="bg-accent/50 border border-border rounded-lg px-3 py-1.5 flex items-center gap-2">
-                    <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center shrink-0">
-                      <FileUp className="w-3.5 h-3.5 text-primary" />
-                    </div>
-                    <span className="text-xs text-foreground/80 max-w-[120px] truncate">{file.name}</span>
-                    <button 
-                      onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}
-                      className="text-muted-foreground hover:text-red-400 ml-1 transition-colors"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
 
-            <div className="flex items-end">
+              {/* Attached Files Display */}
+              {attachments.length > 0 && (
+                <div className="flex flex-wrap gap-2 p-2 mb-2 border-b border-border/50">
+                  {attachments.map((file, idx) => (
+                    <div key={idx} className="bg-accent/50 border border-border rounded-lg px-3 py-1.5 flex items-center gap-2">
+                      <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center shrink-0">
+                        <FileUp className="w-3.5 h-3.5 text-primary" />
+                      </div>
+                      <span className="text-xs text-foreground/80 max-w-[120px] truncate">{file.name}</span>
+                      <button
+                        onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}
+                        className="text-muted-foreground hover:text-red-400 ml-1 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-end">
                 <div className="relative">
-                  <button 
+                  <button
                     onClick={(e) => { e.stopPropagation(); setShowAttachMenu(!showAttachMenu); }}
                     className="p-3.5 text-muted-foreground hover:text-primary transition-colors rounded-xl hover:bg-primary/10"
                   >
-                  <Paperclip className="w-5 h-5" />
-                </button>
+                    <Paperclip className="w-5 h-5" />
+                  </button>
 
-                {/* Attachment Popup Menu */}
+                  {/* Attachment Popup Menu */}
+                  <AnimatePresence>
+                    {showAttachMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute bottom-full left-0 mb-2 w-56 bg-popover border border-border rounded-xl shadow-2xl overflow-hidden py-1 z-50"
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-3 px-4 py-3 text-xs text-foreground/80 hover:bg-accent transition-colors">
+                          <FileUp className="w-4 h-4 text-muted-foreground" /> Add files or documents
+                        </button>
+                        <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-3 px-4 py-3 text-xs text-foreground/80 hover:bg-accent transition-colors">
+                          <ImageIcon className="w-4 h-4 text-muted-foreground" /> Add photos
+                        </button>
+                        <div className="h-px bg-border/50 my-1" />
+                        <button className="w-full flex items-center gap-3 px-4 py-3 text-xs text-foreground/80 hover:bg-accent transition-colors">
+                          <Globe className="w-4 h-4 text-muted-foreground" /> Web search
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <input
+                  type="file"
+                  multiple
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                />
+
+                {/* Slash Command Popup Menu */}
                 <AnimatePresence>
-                  {showAttachMenu && (
-                    <motion.div 
+                  {showSlashMenu && (
+                    <motion.div
                       initial={{ opacity: 0, y: 10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                      className="absolute bottom-full left-0 mb-2 w-56 bg-popover border border-border rounded-xl shadow-2xl overflow-hidden py-1 z-50"
+                      className="absolute bottom-full left-0 mb-2 w-72 max-h-64 overflow-y-auto no-scrollbar bg-popover border border-primary/30 rounded-xl shadow-[0_0_20px_var(--color-primary)] py-2 z-50"
                       onClick={e => e.stopPropagation()}
                     >
-                      <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-3 px-4 py-3 text-xs text-foreground/80 hover:bg-accent transition-colors">
-                        <FileUp className="w-4 h-4 text-muted-foreground" /> Add files or documents
-                      </button>
-                      <button onClick={() => fileInputRef.current?.click()} className="w-full flex items-center gap-3 px-4 py-3 text-xs text-foreground/80 hover:bg-accent transition-colors">
-                        <ImageIcon className="w-4 h-4 text-muted-foreground" /> Add photos
-                      </button>
-                      <div className="h-px bg-border/50 my-1" />
-                      <button className="w-full flex items-center gap-3 px-4 py-3 text-xs text-foreground/80 hover:bg-accent transition-colors">
-                        <Globe className="w-4 h-4 text-muted-foreground" /> Web search
-                      </button>
+                      <div className="px-4 py-2 text-xs font-bold text-primary uppercase tracking-wider border-b border-border/50 mb-1 mt-2">
+                        Attach Asset or Folder
+                      </div>
+                      {assets.filter(a => a.name.toLowerCase().includes(slashQuery.toLowerCase())).length === 0 ? (
+                        <div className="px-4 py-3 text-xs text-muted-foreground">No matching assets found.</div>
+                      ) : (
+                        assets.filter(a => a.name.toLowerCase().includes(slashQuery.toLowerCase())).map(asset => (
+                          <button
+                            key={asset.id}
+                            onClick={() => handleSlashSelect(asset)}
+                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-foreground/80 hover:bg-accent transition-colors text-left"
+                          >
+                            {asset.isFolder ? <Folder className="w-4 h-4 text-blue-400 shrink-0" /> : <FileText className="w-4 h-4 text-muted-foreground shrink-0" />}
+                            <span className="truncate">{asset.name}</span>
+                            <span className="text-[10px] text-muted-foreground/60 ml-auto shrink-0">{asset.isFolder ? 'Folder' : asset.type}</span>
+                          </button>
+                        ))
+                      )}
+
+                      <div className="px-4 py-2 text-xs font-bold text-primary uppercase tracking-wider border-b border-border/50 mb-1 mt-2">
+                        Quick Snippets
+                      </div>
+                      {COMMAND_SNIPPETS.filter(s => s.command.toLowerCase().includes(slashQuery.toLowerCase())).map(snippet => (
+                        <button
+                          key={snippet.id}
+                          onClick={() => handleSnippetSelect(snippet.text)}
+                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-foreground/80 hover:bg-accent transition-colors text-left"
+                        >
+                          <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
+                            <span className="text-primary font-mono text-[10px]">/</span>
+                          </div>
+                          <span className="font-medium truncate">{snippet.command}</span>
+                          <span className="text-[10px] text-muted-foreground ml-auto shrink-0">{snippet.label}</span>
+                        </button>
+                      ))}
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </div>
 
-              <input 
-                type="file" 
-                multiple 
-                className="hidden" 
-                ref={fileInputRef} 
-                onChange={handleFileChange} 
-              />
-              
-              {/* Slash Command Popup Menu */}
-              <AnimatePresence>
-                {showSlashMenu && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute bottom-full left-0 mb-2 w-72 max-h-64 overflow-y-auto no-scrollbar bg-popover border border-primary/30 rounded-xl shadow-[0_0_20px_var(--color-primary)] py-2 z-50"
-                    onClick={e => e.stopPropagation()}
-                  >
-                    <div className="px-4 py-2 text-xs font-bold text-primary uppercase tracking-wider border-b border-border/50 mb-1 mt-2">
-                      Attach Asset or Folder
-                    </div>
-                    {assets.filter(a => a.name.toLowerCase().includes(slashQuery.toLowerCase())).length === 0 ? (
-                      <div className="px-4 py-3 text-xs text-muted-foreground">No matching assets found.</div>
-                    ) : (
-                      assets.filter(a => a.name.toLowerCase().includes(slashQuery.toLowerCase())).map(asset => (
-                        <button 
-                          key={asset.id}
-                          onClick={() => handleSlashSelect(asset)}
-                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-foreground/80 hover:bg-accent transition-colors text-left"
-                        >
-                          {asset.isFolder ? <Folder className="w-4 h-4 text-blue-400 shrink-0" /> : <FileText className="w-4 h-4 text-muted-foreground shrink-0" />}
-                          <span className="truncate">{asset.name}</span>
-                          <span className="text-[10px] text-muted-foreground/60 ml-auto shrink-0">{asset.isFolder ? 'Folder' : asset.type}</span>
-                        </button>
-                      ))
-                    )}
-
-                    <div className="px-4 py-2 text-xs font-bold text-primary uppercase tracking-wider border-b border-border/50 mb-1 mt-2">
-                      Quick Snippets
-                    </div>
-                    {COMMAND_SNIPPETS.filter(s => s.command.toLowerCase().includes(slashQuery.toLowerCase())).map(snippet => (
-                      <button 
-                        key={snippet.id}
-                        onClick={() => handleSnippetSelect(snippet.text)}
-                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-foreground/80 hover:bg-accent transition-colors text-left"
-                      >
-                        <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
-                          <span className="text-primary font-mono text-[10px]">/</span>
-                        </div>
-                        <span className="font-medium truncate">{snippet.command}</span>
-                        <span className="text-[10px] text-muted-foreground ml-auto shrink-0">{snippet.label}</span>
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            
-              <textarea 
-                placeholder="Query the local enclave... (Type '/' for assets)" 
-                value={inputText}
-                onChange={handleInputChange}
-                onPaste={handlePaste}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
-                  }
-                }}
+                <textarea
+                  placeholder="Query the local enclave... (Type '/' for assets)"
+                  value={inputText}
+                  onChange={handleInputChange}
+                  onPaste={handlePaste}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
                   className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground resize-none outline-none py-4 px-4 max-h-32 no-scrollbar min-h-[56px] text-[17px] font-light leading-relaxed"
-                rows={1}
-              />
+                  rows={1}
+                />
                 <div className="relative flex items-center ml-2">
-                  <button 
+                  <button
                     onClick={(e) => { e.stopPropagation(); setShowModelMenu(!showModelMenu); }}
                     className="flex items-center gap-2 bg-accent/50 hover:bg-accent border border-border px-4 py-2 rounded-xl transition-all h-[50px]"
                   >
@@ -536,7 +538,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
 
                   <AnimatePresence>
                     {showModelMenu && (
-                      <motion.div 
+                      <motion.div
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -552,7 +554,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                   </AnimatePresence>
                 </div>
 
-                <button 
+                <button
                   onClick={handleSend}
                   className={`h-[50px] px-5 rounded-xl transition-all ml-2 flex shrink-0 items-center justify-center group/btn overflow-hidden relative ${inputText.trim() || attachments.length > 0 ? 'bg-gradient-to-r from-primary to-blue-600 text-white hover:shadow-[0_0_20px_var(--color-primary)] hover:scale-105' : 'bg-accent/50 text-muted-foreground'}`}
                 >
