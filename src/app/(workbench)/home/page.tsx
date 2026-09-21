@@ -63,6 +63,25 @@ export default function WorkbenchHome() {
       return;
     }
 
+    if (showSlashMenu) {
+      const query = slashQuery.toLowerCase();
+      const isAssetsCmd = query === 'assets' || query === 'assests';
+      const filteredAssets = isAssetsCmd 
+        ? assets 
+        : assets.filter(a => a.name.toLowerCase().includes(query));
+        
+      if (filteredAssets.length > 0) {
+        handleSlashSelect(filteredAssets[0]);
+        return;
+      }
+      
+      const snippet = COMMAND_SNIPPETS.find(s => s.command.toLowerCase().includes(query));
+      if (snippet) {
+        handleSnippetSelect(snippet.text);
+        return;
+      }
+    }
+
     if (inputText.trim() || attachments.length > 0) {
       const sessionId = createNewSession({
         id: Date.now().toString(),
@@ -78,7 +97,7 @@ export default function WorkbenchHome() {
     const val = e.target.value;
     setInputText(val);
 
-    const match = val.match(/(?:\s|^)\/([^\s]*)$/);
+    const match = val.match(/(?:\s|^)\/(?:(?:assets|assests)\s+)?([^\s]*)$/i);
     if (match) {
       setShowSlashMenu(true);
       setSlashQuery(match[1]);
@@ -96,13 +115,13 @@ export default function WorkbenchHome() {
       setAttachments(prev => [...prev, { name: asset.name, type: asset.type }]);
     }
     
-    setInputText(prev => prev.replace(/(?:\s|^)\/[^\s]*$/, ' '));
+    setInputText(prev => prev.replace(/(?:\s|^)\/(?:(?:assets|assests)\s+)?[^\s]*$/i, ' '));
     setShowSlashMenu(false);
     setSlashQuery("");
   };
 
   const handleSnippetSelect = (snippetText: string) => {
-    setInputText(prev => prev.replace(/(?:\s|^)\/[^\s]*$/, snippetText + ' '));
+    setInputText(prev => prev.replace(/(?:\s|^)\/(?:(?:assets|assests)\s+)?[^\s]*$/i, snippetText + ' '));
     setShowSlashMenu(false);
     setSlashQuery("");
   };
@@ -265,10 +284,17 @@ export default function WorkbenchHome() {
                       <div className="px-4 py-2 text-xs font-bold text-primary uppercase tracking-wider border-b border-border/50 mb-1 mt-2">
                         Attach Asset or Folder
                       </div>
-                      {assets.filter(a => a.name.toLowerCase().includes(slashQuery.toLowerCase())).length === 0 ? (
-                        <div className="px-4 py-3 text-xs text-muted-foreground">No matching assets found.</div>
-                      ) : (
-                        assets.filter(a => a.name.toLowerCase().includes(slashQuery.toLowerCase())).map(asset => (
+                      {(() => {
+                        const query = slashQuery.toLowerCase();
+                        const isAssetsCmd = query === 'assets' || query === 'assests';
+                        const filteredAssets = isAssetsCmd 
+                          ? assets 
+                          : assets.filter(a => a.name.toLowerCase().includes(query));
+                          
+                        return filteredAssets.length === 0 ? (
+                          <div className="px-4 py-3 text-xs text-muted-foreground">No matching assets found.</div>
+                        ) : (
+                          filteredAssets.map(asset => (
                           <button 
                             key={asset.id}
                             onClick={() => handleSlashSelect(asset)}
@@ -279,7 +305,8 @@ export default function WorkbenchHome() {
                             <span className="text-[10px] text-muted-foreground/60 ml-auto shrink-0">{asset.isFolder ? 'Folder' : asset.type}</span>
                           </button>
                         ))
-                      )}
+                        );
+                      })()}
 
                       <div className="px-4 py-2 text-xs font-bold text-primary uppercase tracking-wider border-b border-border/50 mb-1 mt-2">
                         Quick Snippets
