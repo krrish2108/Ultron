@@ -81,7 +81,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
                 </div>
                 <span className="font-extrabold tracking-widest text-sm">ULTRON</span>
               </Link>
-              <button onClick={() => setLeftOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors">
+              <button suppressHydrationWarning onClick={() => setLeftOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors">
                 <ChevronLeft className="w-5 h-5" />
               </button>
             </div>
@@ -103,12 +103,12 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
                 <span className="text-sm font-medium transition-colors">Assets</span>
               </Link>
 
-              <button onClick={() => setComingSoon("Source")} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent transition-all group text-muted-foreground hover:text-foreground">
+              <button suppressHydrationWarning onClick={() => setComingSoon("Source")} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent transition-all group text-muted-foreground hover:text-foreground">
                 <Code2 className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" />
                 <span className="text-sm font-medium transition-colors">Source</span>
               </button>
 
-              <button onClick={() => setComingSoon("Customize")} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent transition-all group text-muted-foreground hover:text-foreground">
+              <button suppressHydrationWarning onClick={() => setComingSoon("Customize")} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent transition-all group text-muted-foreground hover:text-foreground">
                 <SlidersHorizontal className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" />
                 <span className="text-sm font-medium transition-colors">Customize</span>
               </button>
@@ -166,7 +166,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
                         {renderStatusDot(session.status)}
                         <span className="text-xs text-foreground/70 truncate group-hover:text-foreground group-hover:translate-x-1 transition-transform">{session.title}</span>
                       </div>
-                      <button
+                      <button suppressHydrationWarning
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -191,7 +191,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
                         {renderStatusDot(session.status)}
                         <span className="text-xs text-foreground/70 truncate group-hover:text-foreground group-hover:translate-x-1 transition-transform">{session.title}</span>
                       </div>
-                      <button
+                      <button suppressHydrationWarning
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -214,7 +214,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
                 </h3>
                 <div className="space-y-0.5 px-1">
                   {documents.map(doc => (
-                    <button key={doc.id} className="w-full flex items-center gap-2 px-3 py-2 rounded-md hover:bg-accent transition-all group text-left">
+                    <button suppressHydrationWarning key={doc.id} className="w-full flex items-center gap-2 px-3 py-2 rounded-md hover:bg-accent transition-all group text-left">
                       <FileText className="w-3 h-3 text-muted-foreground group-hover:text-primary shrink-0 transition-colors" />
                       <span className="text-xs text-muted-foreground truncate group-hover:text-foreground group-hover:translate-x-1 transition-transform">{doc.title}</span>
                     </button>
@@ -262,7 +262,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
             transition={{ duration: 0.4, type: "spring", stiffness: 300, damping: 30 }}
             className="h-full bg-card/80 backdrop-blur-2xl border-r border-border flex flex-col items-center py-4 shrink-0 relative z-10 shadow-sm"
           >
-            <button onClick={() => setLeftOpen(true)} className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center border border-border hover:border-primary hover:shadow-[0_0_15px_var(--color-primary)] transition-all mb-8 group">
+            <button suppressHydrationWarning onClick={() => setLeftOpen(true)} className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center border border-border hover:border-primary hover:shadow-[0_0_15px_var(--color-primary)] transition-all mb-8 group">
               <Image src="/logo.jpeg" alt="Logo" width={40} height={40} className="w-full h-full object-cover group-hover:scale-110 transition-transform" suppressHydrationWarning />
             </button>
             <Link href="/home" className="w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 hover:shadow-[0_0_15px_var(--color-primary)] flex items-center justify-center mb-6 transition-all group">
@@ -270,7 +270,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
             </Link>
             <div className="flex-1" />
               <div className="mt-auto mb-4 p-2 w-full flex justify-center">
-                <button onClick={() => setSettingsOpen(true)} className="p-3 bg-accent/50 hover:bg-accent rounded-xl transition-all">
+                <button suppressHydrationWarning onClick={() => setSettingsOpen(true)} className="p-3 bg-accent/50 hover:bg-accent rounded-xl transition-all">
                   <Settings className="w-5 h-5 text-muted-foreground" />
                 </button>
               </div>
@@ -299,7 +299,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
                 <Activity className="w-4 h-4 text-primary" />
                 <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">System Transparency</span>
               </div>
-              <button onClick={() => setRightOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors">
+              <button suppressHydrationWarning onClick={() => setRightOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors">
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
@@ -368,7 +368,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
           </motion.aside>
         ) : (
           <div className="absolute top-4 right-4 z-50">
-            <button onClick={() => setRightOpen(true)} className="w-10 h-10 rounded-xl bg-black/50 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/60 hover:text-[#00f0ff] hover:border-[#00f0ff] transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)] hover:shadow-[0_0_20px_rgba(0,240,255,0.3)] group">
+            <button suppressHydrationWarning onClick={() => setRightOpen(true)} className="w-10 h-10 rounded-xl bg-black/50 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/60 hover:text-[#00f0ff] hover:border-[#00f0ff] transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)] hover:shadow-[0_0_20px_rgba(0,240,255,0.3)] group">
               <Activity className="w-5 h-5 group-hover:animate-pulse" />
             </button>
           </div>
@@ -396,7 +396,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
               <p className="text-white/50 text-sm mb-8 relative z-10">
                 The {comingSoon.toLowerCase()} capabilities are currently in active development. This feature will be deployed in a future over-the-air update.
               </p>
-              <button 
+              <button suppressHydrationWarning 
                 onClick={() => setComingSoon(null)}
                 className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 transition-all rounded-xl text-sm font-bold text-white relative z-10"
               >
