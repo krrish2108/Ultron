@@ -6,10 +6,9 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { Paperclip, Send, FileText, Download, FileUp, ImageIcon, Globe, X, ChevronDown, Loader2, BrainCircuit, Folder, Copy, Check, Terminal } from "lucide-react";
+import { UltronView, UltronViewAsset } from "@/components/ui/ultron-view";
+import { Paperclip, Send, FileText, Download, FileUp, ImageIcon, Globe, X, ChevronDown, Loader2, BrainCircuit, Folder, Copy, Check, Terminal, Bot, User, StopCircle, RefreshCw, FileCode, Database, FileArchive, Search } from "lucide-react";
 import { useAppStore, Message, Asset } from "@/store/useAppStore";
-
-
 
 const COMMAND_SNIPPETS = [
   { id: 's1', command: 'summarize', label: 'Summarize context', text: 'Summarize the attached files and provide key takeaways.' },
@@ -72,6 +71,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
   const [slashQuery, setSlashQuery] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replyingToRef = useRef<string | null>(null);
+  const [previewFile, setPreviewFile] = useState<UltronViewAsset | null>(null);
 
   const session = useAppStore(state => state.sessions.find(s => s.id === sessionId));
   const addMessageToSession = useAppStore(state => state.addMessageToSession);
@@ -87,6 +87,33 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
     "Analyzing context...",
     "Synthesizing response...",
   ];
+
+  // Auto-open artifact preview
+  useEffect(() => {
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === 'assistant' && lastMessage.status === 'done') {
+        const fileMatch = lastMessage.content.match(/\n\nFile: (.*)$/);
+        if (fileMatch) {
+          const generatedFile = fileMatch[1];
+          const fileName = generatedFile.split(/[/\\]/).pop() || "Document";
+          const fileUrl = `http://localhost:8000/download?path=${encodeURIComponent(generatedFile)}`;
+          const type = fileName.split('.').pop() || 'file';
+          
+          setPreviewFile(prev => {
+            if (prev?.name === fileName) return prev;
+            return {
+              id: Date.now().toString(),
+              name: fileName,
+              type,
+              size: "--",
+              fileUrl
+            };
+          });
+        }
+      }
+    }
+  }, [messages]);
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -259,7 +286,8 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full relative" onClick={() => { setShowAttachMenu(false); setShowModelMenu(false); setShowSlashMenu(false); }}>
+    <div className="flex w-full h-full overflow-hidden">
+      <div className="flex-1 flex flex-col h-full relative" onClick={() => { setShowAttachMenu(false); setShowModelMenu(false); setShowSlashMenu(false); }}>
 
       {/* Top Header */}
       <div className="h-14 border-b border-border/50 flex items-center justify-between px-6 shrink-0 bg-background/80 backdrop-blur-md sticky top-0 z-10">
@@ -345,7 +373,16 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                             )}
                           </div>
                           {generatedFile && (
-                            <div className="bg-background border border-primary/30 rounded-xl p-4 flex flex-col gap-4 mt-4 hover:border-primary transition-colors group relative overflow-hidden">
+                            <div 
+                              onClick={() => setPreviewFile({
+                                id: Date.now().toString(),
+                                name: fileName,
+                                type: fileName.split('.').pop() || 'file',
+                                size: "--",
+                                fileUrl: `http://localhost:8000/download?path=${encodeURIComponent(generatedFile)}`
+                              })}
+                              className="bg-background border border-primary/30 rounded-xl p-4 flex flex-col gap-4 mt-4 hover:border-primary transition-colors group relative overflow-hidden cursor-pointer"
+                            >
                               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent -translate-x-[100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
                                 <div className="flex items-center gap-3">
@@ -358,7 +395,8 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <button onClick={() => {
+                                  <button onClick={(e) => {
+                                    e.stopPropagation();
                                     useAppStore.getState().addAsset({
                                       id: Date.now().toString(),
                                       name: fileName,
@@ -372,7 +410,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                                   >
                                     <Folder className="w-3.5 h-3.5" /> Save to Assets
                                   </button>
-                                  <a href={`http://localhost:8000/download?path=${encodeURIComponent(generatedFile)}`} download className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/20 text-primary shadow-[0_0_10px_var(--color-primary)] transition-all shrink-0">
+                                  <a onClick={e => e.stopPropagation()} href={`http://localhost:8000/download?path=${encodeURIComponent(generatedFile)}`} download className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center hover:bg-primary/20 text-primary shadow-[0_0_10px_var(--color-primary)] transition-all shrink-0">
                                     <Download className="w-4 h-4" />
                                   </a>
                                 </div>
@@ -594,6 +632,22 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
         </div>
       </div>
 
+      </div>
+
+      {/* Artifact Preview Side Panel */}
+      <AnimatePresence>
+        {previewFile && (
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: "50%", opacity: 1 }}
+            exit={{ width: 0, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="h-full border-l border-border bg-[#050505] shadow-2xl overflow-hidden flex flex-col relative shrink-0 z-20"
+          >
+            <UltronView asset={previewFile} onClose={() => setPreviewFile(null)} className="w-full h-full" />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
