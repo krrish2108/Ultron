@@ -8,6 +8,7 @@ import { useAppStore } from "@/store/useAppStore";
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
   const theme = useAppStore(state => state.userSettings.theme);
+  const ultronCursor = useAppStore(state => state.userSettings.ultronCursor);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -20,6 +21,14 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       root.classList.add(theme);
     }
   }, [theme]);
+
+  useEffect(() => {
+    if (ultronCursor) {
+      document.body.classList.add('ultron-cursor');
+    } else {
+      document.body.classList.remove('ultron-cursor');
+    }
+  }, [ultronCursor]);
 
   return (
     <QueryClientProvider client={queryClient}>

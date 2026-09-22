@@ -78,6 +78,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
   const updateMessageInSession = useAppStore(state => state.updateMessageInSession);
   const assets = useAppStore(state => state.assets);
   const setSettingsOpen = useAppStore(state => state.setSettingsOpen);
+  const autoOpenArtifacts = useAppStore(state => state.userSettings.autoOpenArtifacts);
 
   const messages = session?.messages || [];
 
@@ -90,6 +91,8 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
 
   // Auto-open artifact preview
   useEffect(() => {
+    if (!autoOpenArtifacts) return;
+    
     if (messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
       if (lastMessage.role === 'assistant' && lastMessage.status === 'done') {
@@ -113,7 +116,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
         }
       }
     }
-  }, [messages]);
+  }, [messages, autoOpenArtifacts]);
 
   useEffect(() => {
     if (messages.length > 0) {

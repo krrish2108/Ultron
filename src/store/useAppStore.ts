@@ -92,6 +92,9 @@ interface AppState {
     responseCompletions: boolean;
     email: string;
     trainOnData: boolean;
+    ultronCursor: boolean;
+    cursorEffects: boolean;
+    autoOpenArtifacts: boolean;
   };
   updateUserSettings: (updates: Partial<AppState['userSettings']>) => void;
 }
@@ -289,6 +292,9 @@ export const useAppStore = create<AppState>()(
       responseCompletions: true,
       email: "krish@company.local",
       trainOnData: false,
+      ultronCursor: true,
+      cursorEffects: true,
+      autoOpenArtifacts: true,
     },
     updateUserSettings: (updates) => set((state) => ({
       userSettings: { ...state.userSettings, ...updates }
