@@ -100,11 +100,13 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  body.ultron-cursor {
     cursor: url('/cursor.svg') 4 4, auto;
   }
   
   /* Interactive elements use the custom pointer */
-  button, a, select, [role="button"], label, input[type="button"], input[type="submit"], input[type="checkbox"], input[type="radio"] {
+  .ultron-cursor button, .ultron-cursor a, .ultron-cursor select, .ultron-cursor [role="button"], .ultron-cursor label, .ultron-cursor input[type="button"], .ultron-cursor input[type="submit"], .ultron-cursor input[type="checkbox"], .ultron-cursor input[type="radio"] {
     cursor: url('/cursor.svg') 4 4, pointer !important;
   }
 
@@ -118,7 +120,7 @@
   }
 
   /* Text elements use standard text selection cursor */
-  input[type="text"], input[type="password"], input[type="email"], input[type="number"], textarea, p, h1, h2, h3, h4, h5, h6, span {
+  .ultron-cursor input[type="text"], .ultron-cursor input[type="password"], .ultron-cursor input[type="email"], .ultron-cursor input[type="number"], .ultron-cursor textarea, .ultron-cursor p, .ultron-cursor h1, .ultron-cursor h2, .ultron-cursor h3, .ultron-cursor h4, .ultron-cursor h5, .ultron-cursor h6, .ultron-cursor span {
     cursor: text !important;
   }
   html {

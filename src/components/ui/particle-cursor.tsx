@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useAppStore } from "@/store/useAppStore";
 
 export const ParticleCursor = () => {
+  const cursorEffects = useAppStore(state => state.userSettings.cursorEffects);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    if (!cursorEffects) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d', { alpha: true });
@@ -87,6 +90,8 @@ export const ParticleCursor = () => {
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('resize', setCanvasSize);
 
+    let animationId: number;
+
     const animate = () => {
       ctx.clearRect(0, 0, width, height);
       ctx.globalCompositeOperation = 'screen';
@@ -118,7 +123,7 @@ export const ParticleCursor = () => {
         }
       }
 
-      requestAnimationFrame(animate);
+      animationId = requestAnimationFrame(animate);
     };
 
     animate();
@@ -126,8 +131,11 @@ export const ParticleCursor = () => {
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('resize', setCanvasSize);
+      if (animationId) cancelAnimationFrame(animationId);
     };
-  }, []);
+  }, [cursorEffects]);
+
+  if (!cursorEffects) return null;
 
   return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-50 opacity-90" />;
 };

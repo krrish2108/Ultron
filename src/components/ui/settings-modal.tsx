@@ -431,6 +431,39 @@ export function SettingsModal() {
                           </button>
                         </div>
                       </div>
+
+                      <div className="flex items-center justify-between pb-4 border-b border-border/50">
+                        <div>
+                          <span className="text-sm text-muted-foreground block mb-1">Ultron Cursor</span>
+                          <p className="text-[13px] text-muted-foreground/70">Enable the custom Ultron-themed cursor.</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer ml-4 shrink-0">
+                          <input type="checkbox" className="sr-only peer" checked={userSettings.ultronCursor ?? true} onChange={(e) => updateUserSettings({ ultronCursor: e.target.checked })} />
+                          <div className="w-9 h-5 bg-accent peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between pb-4 border-b border-border/50">
+                        <div>
+                          <span className="text-sm text-muted-foreground block mb-1">Cursor Effects</span>
+                          <p className="text-[13px] text-muted-foreground/70">Enable particle effects trailing the cursor.</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer ml-4 shrink-0">
+                          <input type="checkbox" className="sr-only peer" checked={userSettings.cursorEffects ?? true} onChange={(e) => updateUserSettings({ cursorEffects: e.target.checked })} />
+                          <div className="w-9 h-5 bg-accent peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between pb-4 border-b border-border/50">
+                        <div>
+                          <span className="text-sm text-muted-foreground block mb-1">Auto-open Artifacts</span>
+                          <p className="text-[13px] text-muted-foreground/70">Automatically open the side panel when a file is generated.</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer ml-4 shrink-0">
+                          <input type="checkbox" className="sr-only peer" checked={userSettings.autoOpenArtifacts ?? true} onChange={(e) => updateUserSettings({ autoOpenArtifacts: e.target.checked })} />
+                          <div className="w-9 h-5 bg-accent peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                      </div>
                     </div>
                   </div>
 
