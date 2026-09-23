@@ -104,6 +104,10 @@ export default function WorkbenchHome() {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    // Auto-resize textarea
+    e.target.style.height = 'auto';
+    e.target.style.height = `${Math.min(e.target.scrollHeight, 128)}px`;
+
     const val = e.target.value;
     setInputText(val);
 
@@ -346,31 +350,53 @@ export default function WorkbenchHome() {
                   )}
                 </AnimatePresence>
 
-                {isListening ? (
-                  <div className="flex-1 py-1 px-4 min-h-[56px] flex flex-col items-center justify-center relative">
-                    <AudioVisualizer isRecording={isListening} />
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                      <span className="text-primary font-mono text-xs uppercase tracking-widest font-bold drop-shadow-[0_0_8px_var(--color-primary)] bg-background/80 px-3 py-1 rounded-full backdrop-blur-sm border border-primary/20 max-w-[90%] truncate">
-                        {interimTranscript || transcript || "Listening..."}
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <textarea 
-                    placeholder="Query the local enclave... (Type '/' for assets)" 
-                    value={inputText}
-                    onChange={handleInputChange}
-                    onPaste={handlePaste}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSend();
-                      }
-                    }}
-                    className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground resize-none outline-none py-4 px-4 max-h-32 no-scrollbar min-h-[56px] text-[17px] font-light leading-relaxed"
-                    rows={1}
-                  />
-                )}
+                <AnimatePresence mode="popLayout">
+                  {isListening ? (
+                    <motion.div 
+                      key="visualizer"
+                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                      className="flex-1 py-1 px-4 min-h-[56px] flex flex-col items-center justify-center relative w-full"
+                    >
+                      <AudioVisualizer isRecording={isListening} />
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                        <AnimatePresence mode="wait">
+                          <motion.span 
+                            key={interimTranscript || transcript || "Listening..."}
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -5, position: "absolute" }}
+                            transition={{ duration: 0.15 }}
+                            className="text-primary font-mono text-xs uppercase tracking-widest font-bold drop-shadow-[0_0_8px_var(--color-primary)] bg-background/80 px-4 py-1.5 rounded-full backdrop-blur-md border border-primary/30 max-w-[90%] truncate shadow-[0_0_15px_rgba(0,240,255,0.15)]"
+                          >
+                            {interimTranscript || transcript || "Listening..."}
+                          </motion.span>
+                        </AnimatePresence>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.textarea
+                      key="textarea"
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.98 }}
+                      transition={{ duration: 0.2 }}
+                      placeholder="Query the local enclave... (Type '/' for assets)" 
+                      value={inputText}
+                      onChange={handleInputChange}
+                      onPaste={handlePaste}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSend();
+                        }
+                      }}
+                      className="w-full bg-transparent text-foreground placeholder:text-muted-foreground resize-none outline-none py-4 px-4 max-h-32 overflow-y-auto min-h-[56px] text-[17px] font-light leading-relaxed"
+                      rows={1}
+                    />
+                  )}
+                </AnimatePresence>
                 <div className="relative flex items-center ml-2">
                   <button 
                     onClick={(e) => { e.stopPropagation(); setShowModelMenu(!showModelMenu); }}
