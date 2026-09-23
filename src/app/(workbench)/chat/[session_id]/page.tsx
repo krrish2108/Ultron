@@ -475,12 +475,37 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                       );
                     })()}
                     {msg.attachments && msg.attachments.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {msg.attachments.map((file, idx) => (
-                          <div key={idx} className="bg-accent rounded px-2 py-1 flex items-center gap-1.5 text-xs text-foreground/80">
-                            <FileUp className="w-3 h-3 text-muted-foreground" /> {file.name}
-                          </div>
-                        ))}
+                      <div className="flex flex-wrap gap-3 mt-4">
+                        {msg.attachments.map((file, idx) => {
+                          const isImage = file.type.startsWith('image') || /\.(png|jpe?g|gif|webp)$/i.test(file.name);
+                          const isCode = /\.(js|ts|tsx|jsx|css|html|py|rs|go|c|cpp|java|json)$/i.test(file.name);
+                          const isPdf = /\.pdf$/i.test(file.name);
+                          
+                          let Icon = FileText;
+                          if (isImage) Icon = ImageIcon;
+                          else if (isCode) Icon = FileCode;
+                          else if (isPdf) Icon = FileArchive;
+                          else if (file.type === 'folder') Icon = Folder;
+
+                          return (
+                            <div key={idx} className={`relative group flex items-start gap-3 p-3 rounded-xl border ${msg.role === 'user' ? 'bg-black/20 border-white/10' : 'bg-background border-border'} min-w-[200px] max-w-[280px] hover:border-primary/50 transition-all cursor-default overflow-hidden`}>
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent -translate-x-[100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+                              
+                              <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-white/10 text-white' : 'bg-primary/10 text-primary shadow-[0_0_10px_var(--color-primary)]'}`}>
+                                <Icon className="w-5 h-5" />
+                              </div>
+                              
+                              <div className="flex flex-col min-w-0 flex-1 justify-center">
+                                <span className={`text-sm font-bold truncate ${msg.role === 'user' ? 'text-white' : 'text-foreground'}`} title={file.name}>
+                                  {file.name}
+                                </span>
+                                <span className={`text-[10px] uppercase tracking-wider font-bold ${msg.role === 'user' ? 'text-white/60' : 'text-muted-foreground'}`}>
+                                  {file.type === 'folder' ? 'Folder' : (file.type || 'Document')}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </>
