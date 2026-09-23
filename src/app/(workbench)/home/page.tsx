@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Paperclip, Send, BrainCircuit, ChevronDown, Image as ImageIcon, Globe, FileUp, X, Folder, FileText, Mic, Square } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -26,9 +26,38 @@ export default function WorkbenchHome() {
   const [showModelMenu, setShowModelMenu] = useState(false);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashQuery, setSlashQuery] = useState("");
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const selectedItemRef = useRef<HTMLButtonElement>(null);
   
   const { isListening, transcript, interimTranscript, startListening, stopListening } = useSpeechRecognition();
+
+  const filteredSlashItems = useMemo(() => {
+    if (!showSlashMenu) return [];
+    const query = slashQuery.toLowerCase();
+    const isAssetsCmd = query === 'assets' || query === 'assests';
+    
+    const matchedAssets = isAssetsCmd 
+      ? assets 
+      : assets.filter(a => a.name.toLowerCase().includes(query));
+      
+    const matchedSnippets = COMMAND_SNIPPETS.filter(s => s.command.toLowerCase().includes(query));
+    
+    return [
+      ...matchedAssets.map(a => ({ type: 'asset' as const, data: a })),
+      ...matchedSnippets.map(s => ({ type: 'snippet' as const, data: s }))
+    ];
+  }, [showSlashMenu, slashQuery, assets]);
+
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [slashQuery, showSlashMenu]);
+
+  useEffect(() => {
+    if (selectedItemRef.current) {
+      selectedItemRef.current.scrollIntoView({ block: 'nearest' });
+    }
+  }, [selectedIndex]);
 
   useEffect(() => {
     if (!isListening && transcript) {
@@ -303,49 +332,62 @@ export default function WorkbenchHome() {
                       className="absolute bottom-full left-0 mb-2 w-72 max-h-64 overflow-y-auto no-scrollbar bg-popover border border-primary/30 rounded-xl shadow-[0_0_20px_var(--color-primary)] py-2 z-50"
                       onClick={e => e.stopPropagation()}
                     >
-                      <div className="px-4 py-2 text-xs font-bold text-primary uppercase tracking-wider border-b border-border/50 mb-1 mt-2">
-                        Attach Asset or Folder
-                      </div>
                       {(() => {
-                        const query = slashQuery.toLowerCase();
-                        const isAssetsCmd = query === 'assets' || query === 'assests';
-                        const filteredAssets = isAssetsCmd 
-                          ? assets 
-                          : assets.filter(a => a.name.toLowerCase().includes(query));
-                          
-                        return filteredAssets.length === 0 ? (
-                          <div className="px-4 py-3 text-xs text-muted-foreground">No matching assets found.</div>
-                        ) : (
-                          filteredAssets.map(asset => (
-                          <button 
-                            key={asset.id}
-                            onClick={() => handleSlashSelect(asset)}
-                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-foreground/80 hover:bg-accent transition-colors text-left"
-                          >
-                            {asset.isFolder ? <Folder className="w-4 h-4 text-blue-400 shrink-0" /> : <FileText className="w-4 h-4 text-muted-foreground shrink-0" />}
-                            <span className="truncate">{asset.name}</span>
-                            <span className="text-[10px] text-muted-foreground/60 ml-auto shrink-0">{asset.isFolder ? 'Folder' : asset.type}</span>
-                          </button>
-                        ))
+                        const assetsItems = filteredSlashItems.filter(item => item.type === 'asset');
+                        const snippetItems = filteredSlashItems.filter(item => item.type === 'snippet');
+                        
+                        return (
+                          <>
+                            <div className="px-4 py-2 text-xs font-bold text-primary uppercase tracking-wider border-b border-border/50 mb-1 mt-2">
+                              Attach Asset or Folder
+                            </div>
+                            {assetsItems.length === 0 ? (
+                              <div className="px-4 py-3 text-xs text-muted-foreground">No matching assets found.</div>
+                            ) : (
+                              assetsItems.map(item => {
+                                const asset = item.data as Asset;
+                                const globalIdx = filteredSlashItems.findIndex(i => i === item);
+                                const isSelected = globalIdx === selectedIndex;
+                                return (
+                                  <button 
+                                    key={`asset-${asset.id}`}
+                                    ref={isSelected ? selectedItemRef : null}
+                                    onClick={() => handleSlashSelect(asset)}
+                                    className={`w-full flex items-center gap-3 px-4 py-2 text-sm text-left transition-colors ${isSelected ? 'bg-accent text-primary' : 'text-foreground/80 hover:bg-accent'}`}
+                                  >
+                                    {asset.isFolder ? <Folder className={`w-4 h-4 shrink-0 ${isSelected ? 'text-primary' : 'text-blue-400'}`} /> : <FileText className={`w-4 h-4 shrink-0 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />}
+                                    <span className="truncate">{asset.name}</span>
+                                    <span className={`text-[10px] ml-auto shrink-0 ${isSelected ? 'text-primary/70' : 'text-muted-foreground/60'}`}>{asset.isFolder ? 'Folder' : asset.type}</span>
+                                  </button>
+                                );
+                              })
+                            )}
+
+                            <div className="px-4 py-2 text-xs font-bold text-primary uppercase tracking-wider border-b border-border/50 mb-1 mt-2">
+                              Quick Snippets
+                            </div>
+                            {snippetItems.map(item => {
+                              const snippet = item.data as typeof COMMAND_SNIPPETS[0];
+                              const globalIdx = filteredSlashItems.findIndex(i => i === item);
+                              const isSelected = globalIdx === selectedIndex;
+                              return (
+                                <button 
+                                  key={`snippet-${snippet.id}`}
+                                  ref={isSelected ? selectedItemRef : null}
+                                  onClick={() => handleSnippetSelect(snippet.text)}
+                                  className={`w-full flex items-center gap-3 px-4 py-2 text-sm text-left transition-colors ${isSelected ? 'bg-accent text-primary' : 'text-foreground/80 hover:bg-accent'}`}
+                                >
+                                  <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 border ${isSelected ? 'bg-primary/20 border-primary/40' : 'bg-primary/10 border-primary/20'}`}>
+                                    <span className="text-primary font-mono text-[10px]">/</span>
+                                  </div>
+                                  <span className="font-medium truncate">{snippet.command}</span>
+                                  <span className={`text-[10px] ml-auto shrink-0 ${isSelected ? 'text-primary/70' : 'text-muted-foreground'}`}>{snippet.label}</span>
+                                </button>
+                              );
+                            })}
+                          </>
                         );
                       })()}
-
-                      <div className="px-4 py-2 text-xs font-bold text-primary uppercase tracking-wider border-b border-border/50 mb-1 mt-2">
-                        Quick Snippets
-                      </div>
-                      {COMMAND_SNIPPETS.filter(s => s.command.toLowerCase().includes(slashQuery.toLowerCase())).map(snippet => (
-                        <button 
-                          key={snippet.id}
-                          onClick={() => handleSnippetSelect(snippet.text)}
-                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-foreground/80 hover:bg-accent transition-colors text-left"
-                        >
-                          <div className="w-5 h-5 rounded bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
-                            <span className="text-primary font-mono text-[10px]">/</span>
-                          </div>
-                          <span className="font-medium truncate">{snippet.command}</span>
-                          <span className="text-[10px] text-muted-foreground ml-auto shrink-0">{snippet.label}</span>
-                        </button>
-                      ))}
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -387,6 +429,33 @@ export default function WorkbenchHome() {
                       onChange={handleInputChange}
                       onPaste={handlePaste}
                       onKeyDown={(e) => {
+                        if (showSlashMenu) {
+                          if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            setSelectedIndex(prev => (prev < filteredSlashItems.length - 1 ? prev + 1 : prev));
+                            return;
+                          }
+                          if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            setSelectedIndex(prev => (prev > 0 ? prev - 1 : 0));
+                            return;
+                          }
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const selected = filteredSlashItems[selectedIndex];
+                            if (selected) {
+                              if (selected.type === 'asset') handleSlashSelect(selected.data as Asset);
+                              else handleSnippetSelect((selected.data as typeof COMMAND_SNIPPETS[0]).text);
+                            }
+                            return;
+                          }
+                          if (e.key === 'Escape') {
+                            e.preventDefault();
+                            setShowSlashMenu(false);
+                            return;
+                          }
+                        }
+
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
                           handleSend();
