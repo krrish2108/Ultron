@@ -2,9 +2,10 @@
 
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Paperclip, Send, BrainCircuit, ChevronDown, Image as ImageIcon, Globe, FileUp, X, Folder, FileText } from "lucide-react";
+import { Paperclip, Send, BrainCircuit, ChevronDown, Image as ImageIcon, Globe, FileUp, X, Folder, FileText, Mic, Square } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAppStore, Asset } from "@/store/useAppStore";
+import { AudioVisualizer } from "@/components/ui/audio-visualizer";
 
 const COMMAND_SNIPPETS = [
   { id: 's1', command: 'summarize', label: 'Summarize context', text: 'Summarize the attached files and provide key takeaways.' },
@@ -24,6 +25,7 @@ export default function WorkbenchHome() {
   const [showModelMenu, setShowModelMenu] = useState(false);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashQuery, setSlashQuery] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handlePaste = (e: React.ClipboardEvent) => {
@@ -124,6 +126,15 @@ export default function WorkbenchHome() {
     setInputText(prev => prev.replace(/(?:\s|^)\/(?:(?:assets|assests)\s+)?[^\s]*$/i, snippetText + ' '));
     setShowSlashMenu(false);
     setSlashQuery("");
+  };
+
+  const handleToggleRecord = () => {
+    if (isRecording) {
+      setIsRecording(false);
+      setInputText(prev => prev + (prev ? " " : "") + "Analyze the latest security protocols.");
+    } else {
+      setIsRecording(true);
+    }
   };
 
   return (
@@ -328,20 +339,26 @@ export default function WorkbenchHome() {
                   )}
                 </AnimatePresence>
 
+                {isRecording ? (
+                  <div className="flex-1 py-1 px-4 min-h-[56px] flex items-center">
+                    <AudioVisualizer isRecording={isRecording} />
+                  </div>
+                ) : (
                   <textarea 
-                  placeholder="Query the local enclave... (Type '/' for assets)" 
-                  value={inputText}
-                  onChange={handleInputChange}
-                  onPaste={handlePaste}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSend();
-                    }
-                  }}
-                  className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground resize-none outline-none py-4 px-4 max-h-32 no-scrollbar min-h-[56px] text-[17px] font-light leading-relaxed"
-                  rows={1}
-                />
+                    placeholder="Query the local enclave... (Type '/' for assets)" 
+                    value={inputText}
+                    onChange={handleInputChange}
+                    onPaste={handlePaste}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend();
+                      }
+                    }}
+                    className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground resize-none outline-none py-4 px-4 max-h-32 no-scrollbar min-h-[56px] text-[17px] font-light leading-relaxed"
+                    rows={1}
+                  />
+                )}
                 <div className="relative flex items-center ml-2">
                   <button 
                     onClick={(e) => { e.stopPropagation(); setShowModelMenu(!showModelMenu); }}
@@ -369,6 +386,13 @@ export default function WorkbenchHome() {
                     )}
                   </AnimatePresence>
                 </div>
+
+                <button
+                  onClick={handleToggleRecord}
+                  className={`h-[50px] w-[50px] rounded-xl transition-all ml-2 flex shrink-0 items-center justify-center border ${isRecording ? 'bg-red-500/20 text-red-500 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)] animate-pulse' : 'bg-accent/50 text-muted-foreground border-transparent hover:bg-accent hover:text-foreground'}`}
+                >
+                  {isRecording ? <Square className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                </button>
 
                 <button 
                   onClick={handleSend}
