@@ -7,8 +7,9 @@ import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { UltronView, UltronViewAsset } from "@/components/ui/ultron-view";
-import { Paperclip, Send, FileText, Download, FileUp, ImageIcon, Globe, X, ChevronDown, Loader2, BrainCircuit, Folder, Copy, Check, Terminal, Bot, User, StopCircle, RefreshCw, FileCode, Database, FileArchive, Search } from "lucide-react";
+import { Paperclip, Send, FileText, Download, FileUp, ImageIcon, Globe, X, ChevronDown, Loader2, BrainCircuit, Folder, Copy, Check, Terminal, Bot, User, StopCircle, RefreshCw, FileCode, Database, FileArchive, Search, Mic, Square } from "lucide-react";
 import { useAppStore, Message, Asset } from "@/store/useAppStore";
+import { AudioVisualizer } from "@/components/ui/audio-visualizer";
 
 const COMMAND_SNIPPETS = [
   { id: 's1', command: 'summarize', label: 'Summarize context', text: 'Summarize the attached files and provide key takeaways.' },
@@ -69,6 +70,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
   const [showModelMenu, setShowModelMenu] = useState(false);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashQuery, setSlashQuery] = useState("");
+  const [isRecording, setIsRecording] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replyingToRef = useRef<string | null>(null);
   const [previewFile, setPreviewFile] = useState<UltronViewAsset | null>(null);
@@ -286,6 +288,15 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
     setInputText(prev => prev.replace(/(?:\s|^)\/(?:(?:assets|assests)\s+)?[^\s]*$/i, snippetText + ' '));
     setShowSlashMenu(false);
     setSlashQuery("");
+  };
+
+  const handleToggleRecord = () => {
+    if (isRecording) {
+      setIsRecording(false);
+      setInputText(prev => prev + (prev ? " " : "") + "Analyze the latest security protocols.");
+    } else {
+      setIsRecording(true);
+    }
   };
 
   return (
@@ -580,20 +591,26 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                   )}
                 </AnimatePresence>
 
-                <textarea
-                  placeholder="Query the local enclave... (Type '/' for assets)"
-                  value={inputText}
-                  onChange={handleInputChange}
-                  onPaste={handlePaste}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSend();
-                    }
-                  }}
-                  className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground resize-none outline-none py-4 px-4 max-h-32 no-scrollbar min-h-[56px] text-[17px] font-light leading-relaxed"
-                  rows={1}
-                />
+                {isRecording ? (
+                  <div className="flex-1 py-1 px-4 min-h-[56px] flex items-center">
+                    <AudioVisualizer isRecording={isRecording} />
+                  </div>
+                ) : (
+                  <textarea
+                    placeholder="Query the local enclave... (Type '/' for assets)"
+                    value={inputText}
+                    onChange={handleInputChange}
+                    onPaste={handlePaste}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend();
+                      }
+                    }}
+                    className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground resize-none outline-none py-4 px-4 max-h-32 no-scrollbar min-h-[56px] text-[17px] font-light leading-relaxed"
+                    rows={1}
+                  />
+                )}
                 <div className="relative flex items-center ml-2">
                   <button
                     onClick={(e) => { e.stopPropagation(); setShowModelMenu(!showModelMenu); }}
@@ -621,6 +638,13 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                     )}
                   </AnimatePresence>
                 </div>
+
+                <button
+                  onClick={handleToggleRecord}
+                  className={`h-[50px] w-[50px] rounded-xl transition-all ml-2 flex shrink-0 items-center justify-center border ${isRecording ? 'bg-red-500/20 text-red-500 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)] animate-pulse' : 'bg-accent/50 text-muted-foreground border-transparent hover:bg-accent hover:text-foreground'}`}
+                >
+                  {isRecording ? <Square className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                </button>
 
                 <button
                   onClick={handleSend}
