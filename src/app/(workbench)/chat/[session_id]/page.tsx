@@ -10,6 +10,7 @@ import { UltronView, UltronViewAsset } from "@/components/ui/ultron-view";
 import { Paperclip, Send, FileText, Download, FileUp, ImageIcon, Globe, X, ChevronDown, Loader2, BrainCircuit, Folder, Copy, Check, Terminal, Bot, User, StopCircle, RefreshCw, FileCode, Database, FileArchive, Search, Mic, Square } from "lucide-react";
 import { useAppStore, Message, Asset } from "@/store/useAppStore";
 import { AudioVisualizer } from "@/components/ui/audio-visualizer";
+import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
 
 const COMMAND_SNIPPETS = [
   { id: 's1', command: 'summarize', label: 'Summarize context', text: 'Summarize the attached files and provide key takeaways.' },
@@ -70,8 +71,15 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
   const [showModelMenu, setShowModelMenu] = useState(false);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashQuery, setSlashQuery] = useState("");
-  const [isRecording, setIsRecording] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const { isListening, transcript, interimTranscript, startListening, stopListening } = useSpeechRecognition();
+
+  useEffect(() => {
+    if (!isListening && transcript) {
+      setInputText(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + transcript);
+    }
+  }, [isListening, transcript]);
   const replyingToRef = useRef<string | null>(null);
   const [previewFile, setPreviewFile] = useState<UltronViewAsset | null>(null);
 
@@ -291,11 +299,10 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
   };
 
   const handleToggleRecord = () => {
-    if (isRecording) {
-      setIsRecording(false);
-      setInputText(prev => prev + (prev ? " " : "") + "Analyze the latest security protocols.");
+    if (isListening) {
+      stopListening();
     } else {
-      setIsRecording(true);
+      startListening();
     }
   };
 
@@ -591,9 +598,14 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                   )}
                 </AnimatePresence>
 
-                {isRecording ? (
-                  <div className="flex-1 py-1 px-4 min-h-[56px] flex items-center">
-                    <AudioVisualizer isRecording={isRecording} />
+                {isListening ? (
+                  <div className="flex-1 py-1 px-4 min-h-[56px] flex flex-col items-center justify-center relative">
+                    <AudioVisualizer isRecording={isListening} />
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                      <span className="text-primary font-mono text-xs uppercase tracking-widest font-bold drop-shadow-[0_0_8px_var(--color-primary)] bg-background/80 px-3 py-1 rounded-full backdrop-blur-sm border border-primary/20 max-w-[90%] truncate">
+                        {interimTranscript || transcript || "Listening..."}
+                      </span>
+                    </div>
                   </div>
                 ) : (
                   <textarea
@@ -641,9 +653,9 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
 
                 <button
                   onClick={handleToggleRecord}
-                  className={`h-[50px] w-[50px] rounded-xl transition-all ml-2 flex shrink-0 items-center justify-center border ${isRecording ? 'bg-red-500/20 text-red-500 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)] animate-pulse' : 'bg-accent/50 text-muted-foreground border-transparent hover:bg-accent hover:text-foreground'}`}
+                  className={`h-[50px] w-[50px] rounded-xl transition-all ml-2 flex shrink-0 items-center justify-center border ${isListening ? 'bg-red-500/20 text-red-500 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)] animate-pulse' : 'bg-accent/50 text-muted-foreground border-transparent hover:bg-accent hover:text-foreground'}`}
                 >
-                  {isRecording ? <Square className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                  {isListening ? <Square className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
                 </button>
 
                 <button

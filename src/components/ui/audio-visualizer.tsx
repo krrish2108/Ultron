@@ -1,5 +1,4 @@
-import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 interface AudioVisualizerProps {
   isRecording: boolean;
@@ -7,55 +6,109 @@ interface AudioVisualizerProps {
 
 export function AudioVisualizer({ isRecording }: AudioVisualizerProps) {
   const [mounted, setMounted] = useState(false);
+  const [volumes, setVolumes] = useState<number[]>(Array(32).fill(0));
+  
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const dataArrayRef = useRef<Uint8Array | null>(null);
+  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
+  useEffect(() => {
+    if (isRecording) {
+      startVisualization();
+    } else {
+      stopVisualization();
+    }
+    return () => {
+      stopVisualization();
+    };
+  }, [isRecording]);
 
-  // Generate 32 bars for the visualizer
-  const bars = Array.from({ length: 32 });
+  const startVisualization = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const audioContext = new AudioContextClass();
+      audioContextRef.current = audioContext;
+      
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 64; // Gives us 32 frequency bins
+      analyser.smoothingTimeConstant = 0.7;
+      analyserRef.current = analyser;
+      
+      const source = audioContext.createMediaStreamSource(stream);
+      source.connect(analyser);
+      sourceRef.current = source;
+      
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      dataArrayRef.current = dataArray;
+
+      const update = () => {
+        if (!analyserRef.current || !dataArrayRef.current) return;
+        analyserRef.current.getByteFrequencyData(dataArrayRef.current as any);
+        
+        // Convert to array of numbers 0-1
+        const newVolumes = Array.from(dataArrayRef.current).map(v => v / 255);
+        setVolumes(newVolumes);
+        
+        rafRef.current = requestAnimationFrame(update);
+      };
+      
+      update();
+
+    } catch (err) {
+      console.error("Error accessing microphone for visualizer:", err);
+    }
+  };
+
+  const stopVisualization = () => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+    }
+    if (sourceRef.current) {
+      sourceRef.current.disconnect();
+    }
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      audioContextRef.current.close();
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+    }
+    setVolumes(Array(32).fill(0));
+  };
+
+  if (!mounted) return null;
 
   return (
     <div className="flex items-center justify-center w-full h-[56px] relative overflow-hidden rounded-xl">
-      {/* Glow Effect behind the bars */}
       <div className="absolute inset-0 bg-primary/10 blur-xl animate-pulse" />
       
-      {/* Central wave text */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-        <span className="text-primary font-mono text-xs uppercase tracking-widest font-bold drop-shadow-[0_0_8px_var(--color-primary)] bg-background/50 px-3 py-1 rounded-full backdrop-blur-sm border border-primary/20">
-          {isRecording ? "Listening..." : "Initializing Link..."}
-        </span>
-      </div>
-
       <div className="flex items-center justify-center gap-[3px] h-12 w-full px-4 relative z-0 opacity-80">
-        {bars.map((_, i) => {
+        {volumes.map((vol, i) => {
           // Create a wave shape: higher in the middle, shorter on edges
           const distanceFromCenter = Math.abs(i - 15.5);
           const baseHeight = Math.max(8, 48 - distanceFromCenter * 3);
           
+          // Height is baseHeight * 0.2 min, plus volume multiplier
+          // We map 0-1 volume to 0-1 height multiplier
+          const height = isRecording ? Math.max(4, baseHeight * (0.2 + vol * 0.8)) : 4;
+
           return (
-            <motion.div
+            <div
               key={i}
               className="w-1 bg-[#00f0ff] rounded-full shadow-[0_0_8px_#00f0ff]"
-              initial={{ height: "4px" }}
-              animate={
-                isRecording
-                  ? {
-                      height: [
-                        `${baseHeight * 0.3}px`,
-                        `${baseHeight * (Math.random() * 0.5 + 0.5)}px`,
-                        `${baseHeight * 0.3}px`,
-                      ],
-                    }
-                  : { height: "4px" }
-              }
-              transition={{
-                duration: isRecording ? Math.random() * 0.4 + 0.4 : 0.5,
-                repeat: isRecording ? Infinity : 0,
-                ease: "easeInOut",
-                delay: isRecording ? Math.random() * 0.2 : 0,
+              style={{
+                height: `${height}px`,
+                transition: 'height 50ms ease-out'
               }}
             />
           );
