@@ -77,6 +77,18 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
   
   const { isListening, transcript, interimTranscript, startListening, stopListening } = useSpeechRecognition();
 
+  const replyingToRef = useRef<string | null>(null);
+  const [previewFile, setPreviewFile] = useState<UltronViewAsset | null>(null);
+
+  const session = useAppStore(state => state.sessions.find(s => s.id === sessionId));
+  const addMessageToSession = useAppStore(state => state.addMessageToSession);
+  const updateMessageInSession = useAppStore(state => state.updateMessageInSession);
+  const assets = useAppStore(state => state.assets);
+  const setSettingsOpen = useAppStore(state => state.setSettingsOpen);
+  const autoOpenArtifacts = useAppStore(state => state.userSettings.autoOpenArtifacts);
+
+  const messages = session?.messages || [];
+
   const filteredSlashItems = useMemo(() => {
     if (!showSlashMenu) return [];
     const query = slashQuery.toLowerCase();
@@ -109,17 +121,6 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
       setInputText(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + transcript);
     }
   }, [isListening, transcript]);
-  const replyingToRef = useRef<string | null>(null);
-  const [previewFile, setPreviewFile] = useState<UltronViewAsset | null>(null);
-
-  const session = useAppStore(state => state.sessions.find(s => s.id === sessionId));
-  const addMessageToSession = useAppStore(state => state.addMessageToSession);
-  const updateMessageInSession = useAppStore(state => state.updateMessageInSession);
-  const assets = useAppStore(state => state.assets);
-  const setSettingsOpen = useAppStore(state => state.setSettingsOpen);
-  const autoOpenArtifacts = useAppStore(state => state.userSettings.autoOpenArtifacts);
-
-  const messages = session?.messages || [];
 
   const loadingStates = [
     "Ultron is checking Node availability...",
