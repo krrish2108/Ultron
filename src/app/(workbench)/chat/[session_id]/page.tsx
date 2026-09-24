@@ -86,6 +86,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
   const assets = useAppStore(state => state.assets);
   const setSettingsOpen = useAppStore(state => state.setSettingsOpen);
   const autoOpenArtifacts = useAppStore(state => state.userSettings.autoOpenArtifacts);
+  const chatFont = useAppStore(state => state.userSettings.chatFont);
 
   const messages = session?.messages || [];
 
@@ -397,7 +398,10 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
 
                       return (
                         <>
-                          <div className={`text-[15px] leading-relaxed mb-1 ${msg.role === 'user' ? 'text-white/90' : 'text-foreground/90 font-light tracking-wide'}`}>
+                          <div 
+                            style={{ fontFamily: chatFont === "Ultron Serif" ? "var(--font-serif)" : chatFont === "Inter" ? "var(--font-inter)" : "var(--font-sans)" }}
+                            className={`text-[15px] leading-relaxed mb-1 ${msg.role === 'user' ? 'text-white/90' : 'text-foreground/90 font-light tracking-wide'}`}
+                          >
                             {msg.role === 'user' ? (
                               <p className="whitespace-pre-wrap">{textContent}</p>
                             ) : (
