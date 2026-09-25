@@ -1,9 +1,66 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FolderOpen, Plus, ShieldCheck, Activity, Users, Settings2, MoreVertical, Terminal, X, Trash2, AlertTriangle } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
+
+const TelemetryDashboard = ({ isActive }: { isActive: boolean }) => {
+  const [cpu, setCpu] = useState(isActive ? 45 : 0);
+  const [vram, setVram] = useState(isActive ? 60 : 0);
+  const [tokens, setTokens] = useState(isActive ? 124 : 0);
+
+  useEffect(() => {
+    if (!isActive) {
+      setCpu(0); setVram(0); setTokens(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setCpu(prev => Math.min(100, Math.max(10, prev + (Math.random() * 30 - 15))));
+      setVram(prev => Math.min(100, Math.max(20, prev + (Math.random() * 15 - 7.5))));
+      setTokens(prev => Math.max(0, prev + (Math.floor(Math.random() * 60 - 30))));
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [isActive]);
+
+  return (
+    <div className="mb-4 p-3 bg-black/40 border border-white/5 rounded-xl space-y-3 relative z-10">
+      <div>
+        <div className="flex justify-between text-[10px] uppercase font-bold tracking-widest text-white/50 mb-1">
+          <span>Compute Load</span>
+          <span className={isActive ? "text-[#00f0ff]" : "text-white/30"}>{Math.round(cpu)}%</span>
+        </div>
+        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+          <motion.div 
+            className="h-full bg-gradient-to-r from-[#00f0ff] to-blue-500" 
+            animate={{ width: `${cpu}%` }} 
+            transition={{ type: "spring", bounce: 0, duration: 2 }}
+          />
+        </div>
+      </div>
+      <div>
+        <div className="flex justify-between text-[10px] uppercase font-bold tracking-widest text-white/50 mb-1">
+          <span>VRAM Allocation</span>
+          <span className={isActive ? "text-purple-400" : "text-white/30"}>{Math.round(vram)}%</span>
+        </div>
+        <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+          <motion.div 
+            className="h-full bg-gradient-to-r from-purple-500 to-pink-500" 
+            animate={{ width: `${vram}%` }} 
+            transition={{ type: "spring", bounce: 0, duration: 2 }}
+          />
+        </div>
+      </div>
+      <div className="flex justify-between items-center pt-2 mt-1 border-t border-white/5">
+         <span className="text-[10px] uppercase font-bold tracking-widest text-white/50">Throughput</span>
+         <div className="flex items-center gap-1.5">
+           <Activity className={`w-3 h-3 ${isActive ? 'text-emerald-400 animate-pulse' : 'text-white/30'}`} />
+           <span className={`text-xs font-mono font-bold ${isActive ? 'text-emerald-400' : 'text-white/30'}`}>{isActive ? `${tokens} t/s` : '0 t/s'}</span>
+         </div>
+      </div>
+    </div>
+  );
+};
 
 export default function EnclavesPage() {
   const enclaves = useAppStore((state) => state.enclaves);
@@ -156,6 +213,8 @@ export default function EnclavesPage() {
                 )}
               </div>
             </div>
+
+            <TelemetryDashboard isActive={enclave.status === 'active' || enclave.status === 'processing'} />
 
             <div className="flex items-center justify-between text-xs relative z-10 pt-4 border-t border-white/5">
               <div className="flex items-center gap-3 text-white/40">
