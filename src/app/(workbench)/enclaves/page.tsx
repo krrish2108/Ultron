@@ -70,14 +70,19 @@ export default function EnclavesPage() {
   const workloadTypes = useAppStore((state) => state.workloadTypes);
   const addWorkloadType = useAppStore((state) => state.addWorkloadType);
   const removeWorkloadType = useAppStore((state) => state.removeWorkloadType);
+  const updateEnclaveMembers = useAppStore((state) => state.updateEnclaveMembers);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newEnclaveName, setNewEnclaveName] = useState("");
   const [newEnclaveType, setNewEnclaveType] = useState("");
 
   const [activeMenuIndex, setActiveMenuIndex] = useState<number | null>(null);
+  const [activeMemberMenuIndex, setActiveMemberMenuIndex] = useState<number | null>(null);
   const [newTypeInput, setNewTypeInput] = useState("");
   const [showTypeManager, setShowTypeManager] = useState(false);
+  
+  const [newMemberName, setNewMemberName] = useState("");
+  const [newMemberSpec, setNewMemberSpec] = useState("");
 
   const handleCreate = () => {
     if (!newEnclaveName.trim()) return;
@@ -106,8 +111,35 @@ export default function EnclavesPage() {
     setActiveMenuIndex(null);
   };
 
+  const handleAddMember = (index: number) => {
+    if (!newMemberName.trim()) return;
+    const enclave = enclaves[index];
+    const initials = newMemberName.trim().split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase();
+    const colors = ["bg-red-900", "bg-green-900", "bg-yellow-900", "bg-indigo-900", "bg-pink-900", "bg-teal-900", "bg-blue-900", "bg-purple-900"];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const newMember: any = {
+      id: Date.now().toString(),
+      name: newMemberName.trim(),
+      initials,
+      color: randomColor,
+      specialization: newMemberSpec.trim() || "General",
+    };
+    
+    updateEnclaveMembers(index, [...(enclave.members || []), newMember]);
+    setNewMemberName("");
+    setNewMemberSpec("");
+  };
+
+  const handleRemoveMember = (enclaveIndex: number, memberId: string) => {
+    const enclave = enclaves[enclaveIndex];
+    if (!enclave.members) return;
+    updateEnclaveMembers(enclaveIndex, enclave.members.filter(m => m.id !== memberId));
+  };
+
   return (
-    <div className="flex-1 flex flex-col h-full relative z-10 overflow-y-auto custom-scrollbar p-8" onClick={() => setActiveMenuIndex(null)}>
+    <div className="flex-1 flex flex-col h-full relative z-10 overflow-y-auto custom-scrollbar p-8" onClick={() => { setActiveMenuIndex(null); setActiveMemberMenuIndex(null); }}>
       
       {/* Header */}
       <div className="flex items-end justify-between mb-10 max-w-6xl mx-auto w-full">
@@ -145,14 +177,14 @@ export default function EnclavesPage() {
             {/* Hover Glow */}
             <div className="absolute inset-0 bg-gradient-to-tr from-[#00f0ff]/0 via-transparent to-[#00f0ff]/0 group-hover:from-[#00f0ff]/5 transition-colors duration-500" />
             
-            <div className="flex items-start justify-between mb-6 relative z-10">
+            <div className="flex items-start justify-between mb-4 relative z-10">
               <div className="flex items-center gap-3">
                 <div className={`w-2 h-2 rounded-full ${enclave.status === 'active' ? 'bg-[#00f0ff] shadow-[0_0_10px_#00f0ff] animate-pulse' : enclave.status === 'processing' ? 'bg-amber-500' : 'bg-white/20'}`} />
                 <h3 className="font-bold text-lg text-white/90 group-hover:text-white transition-colors">{enclave.name}</h3>
               </div>
               <div className="relative">
                 <button 
-                  onClick={(e) => { e.stopPropagation(); setActiveMenuIndex(activeMenuIndex === i ? null : i); }}
+                  onClick={(e) => { e.stopPropagation(); setActiveMenuIndex(activeMenuIndex === i ? null : i); setActiveMemberMenuIndex(null); }}
                   className="text-white/30 hover:text-white transition-colors"
                 >
                   <MoreVertical className="w-5 h-5" />
@@ -182,6 +214,17 @@ export default function EnclavesPage() {
               </div>
             </div>
 
+            {/* TAGS */}
+            {enclave.members && enclave.members.length > 0 && (
+              <div className="mb-4 flex flex-wrap gap-2 relative z-10">
+                {Array.from(new Set(enclave.members.map(m => m.specialization))).map(spec => (
+                  <span key={spec} className="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-[9px] uppercase tracking-wider text-[#00f0ff] font-bold">
+                    {spec}
+                  </span>
+                ))}
+              </div>
+            )}
+            
             <div className="grid grid-cols-2 gap-4 mb-6 relative z-10">
               <div className="bg-white/5 rounded-xl p-3 border border-white/5">
                 <div className="flex items-center gap-2 text-white/40 mb-1">
@@ -220,10 +263,74 @@ export default function EnclavesPage() {
               <div className="flex items-center gap-3 text-white/40">
                 <span className="flex items-center gap-1.5"><Activity className="w-3.5 h-3.5" /> {enclave.lastActive}</span>
               </div>
-              <div className="flex -space-x-2">
-                <div className="w-6 h-6 rounded-full bg-blue-900 border border-black flex items-center justify-center text-[8px] font-bold">JD</div>
-                <div className="w-6 h-6 rounded-full bg-purple-900 border border-black flex items-center justify-center text-[8px] font-bold">SM</div>
-                <div className="w-6 h-6 rounded-full bg-white/10 border border-black flex items-center justify-center text-[10px]"><Users className="w-3 h-3" /></div>
+              <div className="relative">
+                <div 
+                  className="flex -space-x-2 cursor-pointer hover:scale-105 transition-transform"
+                  onClick={(e) => { e.stopPropagation(); setActiveMemberMenuIndex(activeMemberMenuIndex === i ? null : i); setActiveMenuIndex(null); }}
+                >
+                  {enclave.members?.slice(0, 3).map(m => (
+                    <div key={m.id} title={m.name} className={`w-6 h-6 rounded-full ${m.color} border border-black flex items-center justify-center text-[8px] font-bold z-10 hover:z-20 text-white`}>{m.initials}</div>
+                  ))}
+                  <div className="w-6 h-6 rounded-full bg-white/10 border border-black flex items-center justify-center text-[10px] z-0 text-white hover:bg-white/20"><Plus className="w-3 h-3" /></div>
+                </div>
+
+                {/* Manage Members Popover */}
+                <AnimatePresence>
+                  {activeMemberMenuIndex === i && (
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                      className="absolute right-0 bottom-full mb-2 w-72 bg-[#0a0a0a] border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] p-4 z-50 overflow-hidden"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <h4 className="text-xs font-bold text-white/50 uppercase tracking-wider mb-3 flex items-center justify-between">
+                        Manage Access
+                        <button onClick={() => setActiveMemberMenuIndex(null)} className="hover:text-white"><X className="w-3 h-3"/></button>
+                      </h4>
+                      
+                      <div className="space-y-2 mb-4 max-h-32 overflow-y-auto custom-scrollbar pr-2">
+                        {(!enclave.members || enclave.members.length === 0) && (
+                          <div className="text-xs text-white/30 text-center py-2">No members assigned.</div>
+                        )}
+                        {enclave.members?.map(m => (
+                          <div key={m.id} className="flex items-center justify-between group">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-full ${m.color} flex items-center justify-center text-[10px] font-bold text-white`}>{m.initials}</div>
+                              <div className="flex flex-col">
+                                <span className="text-sm text-white/90 font-medium leading-none">{m.name}</span>
+                                <span className="text-[10px] text-[#00f0ff] uppercase tracking-wider font-bold mt-1">{m.specialization}</span>
+                              </div>
+                            </div>
+                            <button onClick={() => handleRemoveMember(i, m.id)} className="text-red-400/50 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-1">
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="border-t border-white/10 pt-3 flex flex-col gap-2">
+                        <input 
+                          type="text" 
+                          value={newMemberName}
+                          onChange={e => setNewMemberName(e.target.value)}
+                          placeholder="Member Name..."
+                          className="w-full bg-[#0a0a0a] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00f0ff]/50"
+                        />
+                        <div className="flex gap-2">
+                          <input 
+                            type="text" 
+                            value={newMemberSpec}
+                            onChange={e => setNewMemberSpec(e.target.value)}
+                            placeholder="Tag/Role (e.g. Backend)"
+                            className="flex-1 bg-[#0a0a0a] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#00f0ff]/50"
+                          />
+                          <button onClick={() => handleAddMember(i)} className="bg-[#00f0ff]/10 text-[#00f0ff] px-4 rounded-lg text-xs font-bold hover:bg-[#00f0ff]/20 transition-colors">Add</button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </motion.div>
