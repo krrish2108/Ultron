@@ -1,12 +1,21 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+export type EnclaveMember = {
+  id: string;
+  name: string;
+  initials: string;
+  color: string;
+  specialization: string;
+};
+
 export type Enclave = {
   name: string;
   status: string;
   nodes: number;
   type: string;
   lastActive: string;
+  members?: EnclaveMember[];
 };
 
 export type Message = {
@@ -50,6 +59,7 @@ interface AppState {
   addEnclave: (enclave: Enclave) => void;
   removeEnclave: (index: number) => void;
   updateEnclaveType: (index: number, type: string) => void;
+  updateEnclaveMembers: (index: number, members: EnclaveMember[]) => void;
 
   workloadTypes: string[];
   addWorkloadType: (type: string) => void;
@@ -103,11 +113,11 @@ export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
   enclaves: [
-    { name: "Core Intelligence", status: "active", nodes: 24, type: "Production", lastActive: "Just now" },
-    { name: "Threat Analysis V2", status: "processing", nodes: 8, type: "Research", lastActive: "2 hrs ago" },
-    { name: "Legacy DB Migration", status: "offline", nodes: 0, type: "Archived", lastActive: "3 weeks ago" },
-    { name: "Neural Network Training", status: "active", nodes: 128, type: "Cluster", lastActive: "1 min ago" },
-    { name: "Web Server Fleet", status: "active", nodes: 6, type: "Production", lastActive: "10 mins ago" },
+    { name: "Core Intelligence", status: "active", nodes: 24, type: "Production", lastActive: "Just now", members: [{ id: "m1", name: "John Doe", initials: "JD", color: "bg-blue-900", specialization: "Backend" }] },
+    { name: "Threat Analysis V2", status: "processing", nodes: 8, type: "Research", lastActive: "2 hrs ago", members: [{ id: "m2", name: "Sarah Miller", initials: "SM", color: "bg-purple-900", specialization: "Security" }] },
+    { name: "Legacy DB Migration", status: "offline", nodes: 0, type: "Archived", lastActive: "3 weeks ago", members: [] },
+    { name: "Neural Network Training", status: "active", nodes: 128, type: "Cluster", lastActive: "1 min ago", members: [] },
+    { name: "Web Server Fleet", status: "active", nodes: 6, type: "Production", lastActive: "10 mins ago", members: [] },
   ],
   addEnclave: (enclave) => set((state) => ({ enclaves: [enclave, ...state.enclaves] })),
   removeEnclave: (index) => set((state) => {
@@ -118,6 +128,11 @@ export const useAppStore = create<AppState>()(
   updateEnclaveType: (index, type) => set((state) => {
     const newEnclaves = [...state.enclaves];
     newEnclaves[index] = { ...newEnclaves[index], type };
+    return { enclaves: newEnclaves };
+  }),
+  updateEnclaveMembers: (index, members) => set((state) => {
+    const newEnclaves = [...state.enclaves];
+    newEnclaves[index] = { ...newEnclaves[index], members };
     return { enclaves: newEnclaves };
   }),
 
