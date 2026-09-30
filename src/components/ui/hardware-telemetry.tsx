@@ -6,13 +6,13 @@ import { Cpu, HardDrive, Activity, Zap } from "lucide-react";
 
 export function HardwareTelemetry() {
   const [data, setData] = useState({
-    vram_used: 4.2,
-    vram_total: 24.0,
-    ram_used: 16.5,
-    ram_total: 64.0,
-    token_speed: 45,
+    vram_used: 2.1,
+    vram_total: 8.0,
+    ram_used: 6.5,
+    ram_total: 16.0,
+    token_speed: 0,
     context_used: 4200,
-    context_total: 128000
+    context_total: 32000
   });
 
   const [isConnected, setIsConnected] = useState(false);
