@@ -115,8 +115,8 @@ export function HardwareTelemetry() {
               transition={{ duration: 0.3 }}
             />
           </div>
-          <div className="w-[120px] text-right">
-            <span className="text-white/90">{data.context_used.toLocaleString()}</span> / {data.context_total.toLocaleString()}
+          <div className="w-[120px] text-right" suppressHydrationWarning>
+            <span className="text-white/90">{data.context_used.toLocaleString('en-US')}</span> / {data.context_total.toLocaleString('en-US')}
           </div>
         </div>
 
