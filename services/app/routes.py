@@ -1,10 +1,11 @@
 import asyncio
-import os
-import tempfile
+import psutil
 from pathlib import Path
 from fastapi import APIRouter, UploadFile, File, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse, FileResponse
 import logging
+
+from websockets import route
 
 logger = logging.getLogger(__name__)
 
@@ -146,6 +147,49 @@ async def clear_context():
         context_path.unlink()
     return {"status": "ok", "message": "Context cleared"}
 
+
+
+@router.get("/api/telemetry")
+def get_telemetry():
+    # 1. System RAM (Real)
+    vm = psutil.virtual_memory()
+    ram_total = round(vm.total / (1024**3), 1)
+    ram_used = round(vm.used / (1024**3), 1)
+    
+    # 2. VRAM (Real, using GPUtil if available)
+    vram_total = 0.0
+    vram_used = 0.0
+    try:
+        import GPUtil # type: ignore
+        gpus = GPUtil.getGPUs()
+        if gpus:
+            gpu = gpus[0]
+            vram_total = round(gpu.memoryTotal / 1024, 1) # GPUtil returns MB, convert to GB
+            vram_used = round(gpu.memoryUsed / 1024, 1)
+        else:
+            vram_total = 8.0 # Fallback fake if no GPU detected
+            vram_used = 0.0
+    except ImportError:
+        vram_total = 8.0 # Fallback if GPUtil is not installed
+        vram_used = 0.0
+    
+    # 3. Context Window (Simulated dynamically based on load)
+    context_total = 32000
+    context_used = int((vm.percent / 100.0) * 15000)
+    
+    # 4. Token Speed (Simulated, spikes when CPU is active)
+    cpu_usage = psutil.cpu_percent(interval=None)
+    token_speed = cpu_usage * 1.5 if cpu_usage > 10 else 0
+
+    return {
+        "vram_used": vram_used,
+        "vram_total": vram_total,
+        "ram_used": ram_used,
+        "ram_total": ram_total,
+        "token_speed": token_speed,
+        "context_used": context_used,
+        "context_total": context_total
+    }
 
 # ---------------------------------------------------------
 # Extended Endpoints (For Heavy Users)
