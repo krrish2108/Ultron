@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { SettingsModal } from "@/components/ui/settings-modal";
+import { HardwareTelemetry } from "@/components/ui/hardware-telemetry";
 
 export default function WorkbenchLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -59,7 +60,8 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <div className="h-screen w-full bg-background flex overflow-hidden text-foreground font-sans relative">
+    <div className="h-screen w-full flex flex-col bg-background overflow-hidden text-foreground font-sans relative">
+      <div className="flex-1 flex overflow-hidden relative">
       <SettingsModal />
       
       {/* Global Animated Grid Background */}
@@ -454,7 +456,9 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
 
+      <HardwareTelemetry />
     </div>
   );
 }
