@@ -7,7 +7,7 @@ import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { UltronView, UltronViewAsset } from "@/components/ui/ultron-view";
-import { Paperclip, Send, FileText, Download, FileUp, ImageIcon, Globe, X, ChevronDown, Loader2, BrainCircuit, Folder, Copy, Check, Terminal, Bot, User, StopCircle, RefreshCw, FileCode, Database, FileArchive, Search, Mic, Square } from "lucide-react";
+import { Paperclip, Send, FileText, Download, FileUp, ImageIcon, Globe, X, ChevronDown, Loader2, BrainCircuit, Folder, Copy, Check, Terminal, Bot, User, StopCircle, RefreshCw, FileCode, Database, FileArchive, Search, Mic, Square, ShieldAlert, Info } from "lucide-react";
 import { useAppStore, Message, Asset } from "@/store/useAppStore";
 import { AudioVisualizer } from "@/components/ui/audio-visualizer";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
@@ -61,6 +61,13 @@ const CodeBlock = ({ node, inline, className, children, ...props }: any) => {
   );
 };
 
+type PendingAction = {
+  command: string;
+  language: string;
+  riskLevel: 'low' | 'medium' | 'high';
+  reasoning: string;
+} | null;
+
 export default function ChatSession({ params }: { params: Promise<{ session_id: string }> }) {
   const unwrappedParams = use(params);
   const sessionId = unwrappedParams.session_id;
@@ -79,6 +86,10 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
 
   const replyingToRef = useRef<string | null>(null);
   const [previewFile, setPreviewFile] = useState<UltronViewAsset | null>(null);
+  
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+  const [showAdviceInput, setShowAdviceInput] = useState(false);
+  const [adviceText, setAdviceText] = useState("");
 
   const session = useAppStore(state => state.sessions.find(s => s.id === sessionId));
   const addMessageToSession = useAppStore(state => state.addMessageToSession);
@@ -287,8 +298,22 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
     }
 
     if (inputText.trim() || attachments.length > 0) {
+      const isTrigger = inputText.toLowerCase().includes('run scan') || inputText.toLowerCase().includes('execute script') || inputText.toLowerCase().includes('hack');
+      
       const newMessage: Message = { id: Date.now().toString(), role: 'user', content: inputText, attachments: attachments };
       addMessageToSession(sessionId, newMessage);
+      
+      if (isTrigger) {
+        setTimeout(() => {
+          setPendingAction({
+            command: "nmap -sV 192.168.1.0/24 && chmod +x ./payload.sh && ./payload.sh",
+            language: "bash",
+            riskLevel: "high",
+            reasoning: "The user requested a system scan. This command will map the local subnet and execute the specified script, which modifies local system state and triggers external network calls."
+          });
+        }, 1500);
+      }
+
       setInputText("");
       setAttachments([]);
       setShowSlashMenu(false);
@@ -521,6 +546,126 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
 
         </div>
       </div>
+
+      {/* AIR-GAP GUARDRAIL PANEL */}
+      <AnimatePresence>
+        {pendingAction && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 50, scale: 0.95 }}
+            className={`absolute bottom-[100px] left-0 right-0 mb-4 mx-4 md:mx-auto max-w-3xl bg-black/90 backdrop-blur-3xl border ${
+              pendingAction.riskLevel === 'high' ? 'border-red-500/50 shadow-[0_0_40px_rgba(239,68,68,0.3)]' : 
+              pendingAction.riskLevel === 'medium' ? 'border-amber-500/50 shadow-[0_0_40px_rgba(245,158,11,0.3)]' : 
+              'border-emerald-500/50 shadow-[0_0_40px_rgba(16,185,129,0.3)]'
+            } rounded-2xl overflow-hidden z-50`}
+          >
+            {/* Header */}
+            <div className={`px-4 py-3 border-b flex items-center justify-between ${
+              pendingAction.riskLevel === 'high' ? 'bg-red-500/10 border-red-500/20 text-red-400' :
+              pendingAction.riskLevel === 'medium' ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' :
+              'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+            }`}>
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 animate-pulse" />
+                <span className="font-bold text-sm tracking-wide">AIR-GAP GUARDRAIL INTERCEPT</span>
+              </div>
+              <div className="text-xs font-mono font-bold uppercase tracking-widest px-2 py-1 rounded bg-black/50 border border-current">
+                Risk: {pendingAction.riskLevel}
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-5">
+              <p className="text-sm text-white/80 mb-3 font-medium">Ultron is attempting to execute the following operation:</p>
+              <div className="bg-[#0a0a0a] border border-white/10 rounded-xl p-4 font-mono text-sm text-[#00f0ff] overflow-x-auto mb-4">
+                <code>{pendingAction.command}</code>
+              </div>
+              <p className="text-xs text-white/50 mb-5 flex items-start gap-2">
+                <Info className="w-4 h-4 shrink-0" />
+                {pendingAction.reasoning}
+              </p>
+
+              {/* Advice Input (if toggled) */}
+              <AnimatePresence>
+                {showAdviceInput && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden mb-4"
+                  >
+                    <div className="flex gap-2 items-center bg-white/5 border border-white/10 rounded-xl p-1">
+                      <input 
+                        type="text" 
+                        value={adviceText}
+                        onChange={e => setAdviceText(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && adviceText.trim()) {
+                            const newMsg: Message = { id: Date.now().toString(), role: 'user', content: `Please modify your command based on this advice: ${adviceText}` };
+                            addMessageToSession(sessionId, newMsg);
+                            setPendingAction(null);
+                            setShowAdviceInput(false);
+                            setAdviceText("");
+                          }
+                        }}
+                        placeholder="Give advice to modify this command..."
+                        className="flex-1 bg-transparent border-none text-sm text-white px-3 py-2 focus:outline-none"
+                        autoFocus
+                      />
+                      <button 
+                        onClick={() => {
+                          if (adviceText.trim()) {
+                            const newMsg: Message = { id: Date.now().toString(), role: 'user', content: `Please modify your command based on this advice: ${adviceText}` };
+                            addMessageToSession(sessionId, newMsg);
+                            setPendingAction(null);
+                            setShowAdviceInput(false);
+                            setAdviceText("");
+                          }
+                        }}
+                        className="bg-primary/20 text-primary px-4 py-2 rounded-lg text-sm font-bold hover:bg-primary/30 transition-colors"
+                      >
+                        Send
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Controls */}
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => { setPendingAction(null); setShowAdviceInput(false); }}
+                  className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-white text-sm font-bold rounded-xl transition-colors border border-white/10"
+                >
+                  Deny
+                </button>
+                <button 
+                  onClick={() => setShowAdviceInput(!showAdviceInput)}
+                  className="flex-1 py-2.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-sm font-bold rounded-xl transition-colors border border-blue-500/20"
+                >
+                  Advise AI
+                </button>
+                <button 
+                  onClick={() => {
+                    const newMsg: Message = { id: Date.now().toString(), role: 'assistant', content: "Command approved and executed successfully. The output logs indicate all systems nominal.", status: "done" };
+                    addMessageToSession(sessionId, newMsg);
+                    setPendingAction(null);
+                    setShowAdviceInput(false);
+                  }}
+                  className={`flex-[2] py-2.5 text-black text-sm font-bold rounded-xl transition-transform hover:scale-[1.02] shadow-lg ${
+                    pendingAction.riskLevel === 'high' ? 'bg-gradient-to-r from-red-500 to-rose-600 shadow-red-500/20' :
+                    pendingAction.riskLevel === 'medium' ? 'bg-gradient-to-r from-amber-400 to-orange-500 shadow-amber-500/20' :
+                    'bg-gradient-to-r from-emerald-400 to-teal-500 shadow-emerald-500/20'
+                  }`}
+                >
+                  Approve & Execute
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Input Area */}
       <div className="p-6 bg-gradient-to-t from-background via-background to-transparent w-full shrink-0 relative z-20">
