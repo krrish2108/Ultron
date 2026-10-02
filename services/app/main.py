@@ -2,11 +2,12 @@ import asyncio
 import sys
 from pathlib import Path
 
-from services.utils.config import DOC_GEN_MODEL, RAG_MODEL, ROUTER_MODEL
-
+# Inject project root into sys.path before any local imports
 project_root = Path(__file__).resolve().parent.parent.parent
 if str(project_root) not in sys.path and project_root.exists():
     sys.path.insert(0, str(project_root))
+
+from services.utils.config import DOC_GEN_MODEL, RAG_MODEL, ROUTER_MODEL
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

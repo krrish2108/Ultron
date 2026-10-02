@@ -177,7 +177,7 @@ def get_telemetry():
     context_total = 32000
     context_used = int((vm.percent / 100.0) * 15000)
     
-    # 4. Token Speed (Simulated, spikes when CPU is active)
+    # 4. CPU usage
     cpu_usage = psutil.cpu_percent(interval=None)
     token_speed = cpu_usage * 1.5 if cpu_usage > 10 else 0
 
@@ -186,6 +186,8 @@ def get_telemetry():
         "vram_total": vram_total,
         "ram_used": ram_used,
         "ram_total": ram_total,
+        "cpu_used": cpu_usage,
+        "cpu_total": 100,
         "token_speed": token_speed,
         "context_used": context_used,
         "context_total": context_total
