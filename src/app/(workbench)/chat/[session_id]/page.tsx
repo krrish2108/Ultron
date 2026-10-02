@@ -375,14 +375,6 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
         <h2 className="font-bold text-sm text-foreground/90 truncate cursor-pointer hover:text-foreground transition-colors">
           {session?.title || "New Chat"}
         </h2>
-        <div className="flex items-center gap-3">
-          <div className="bg-accent/50 border border-border px-2 py-1 rounded text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-            Log Analysis
-          </div>
-          <div className="bg-[#3b82f6]/10 border border-[#3b82f6]/20 px-2 py-1 rounded text-[10px] font-bold text-[#3b82f6] font-mono">
-            Llama-3-8B-Local
-          </div>
-        </div>
       </div>
 
       {/* Message Thread */}
