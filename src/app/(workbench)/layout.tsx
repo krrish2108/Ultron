@@ -14,6 +14,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { SettingsModal } from "@/components/ui/settings-modal";
 import { HardwareTelemetry } from "@/components/ui/hardware-telemetry";
 import { BottomTelemetryBar } from "@/components/ui/bottom-telemetry-bar";
+import { AgentGraph } from "@/components/ui/agent-graph";
 
 export default function WorkbenchLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -24,6 +25,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
+  const [transparencyTab, setTransparencyTab] = useState<'terminal' | 'graph'>('graph');
 
   const recentSessions = useAppStore(state => state.sessions);
   const setSettingsOpen = useAppStore(state => state.setSettingsOpen);
@@ -319,54 +321,84 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-5 space-y-8 no-scrollbar">
+            <div className="flex-1 overflow-y-auto p-5 space-y-8 no-scrollbar flex flex-col">
               
-              {/* Agent Trace */}
-              <div className="space-y-3">
-                <h3 className="text-[10px] font-bold text-primary uppercase tracking-widest flex items-center gap-2">
-                  <Terminal className="w-3.5 h-3.5" /> Agent Trace
-                </h3>
-                <div className="bg-background border border-border rounded-xl p-4 font-mono text-[10px] leading-relaxed text-muted-foreground h-48 overflow-y-auto no-scrollbar shadow-inner relative">
-                  <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_0%,var(--color-primary)_50%,transparent_100%)] bg-[length:100%_4px] animate-[scan_2s_linear_infinite] pointer-events-none opacity-20" />
-                  {terminalLogs.map((log, idx) => {
-                    let colorClass = "text-muted-foreground";
-                    if (log.includes("[PLAN]")) colorClass = "text-primary";
-                    if (log.includes("Intent classified")) colorClass = "text-emerald-500";
-                    if (log.includes("[ACT]")) colorClass = "text-blue-500";
-                    if (log.includes("[OBSERVE]")) colorClass = "text-amber-500";
-                    return <motion.div initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} key={idx} className={colorClass}>{log}</motion.div>;
-                  })}
-                  <div className="text-primary mt-2 animate-pulse">_</div>
-                </div>
+              <div className="flex items-center gap-2 bg-background p-1 rounded-lg border border-border">
+                <button 
+                  suppressHydrationWarning
+                  onClick={() => setTransparencyTab('terminal')}
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${transparencyTab === 'terminal' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Terminal
+                </button>
+                <button 
+                  suppressHydrationWarning
+                  onClick={() => setTransparencyTab('graph')}
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${transparencyTab === 'graph' ? 'bg-[#00f0ff]/20 text-[#00f0ff]' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Agent Tree
+                </button>
               </div>
 
-              {/* Routing Decision */}
-              <div className="space-y-3">
-                <h3 className="text-[10px] font-bold text-blue-500 uppercase tracking-widest flex items-center gap-2">
-                  <BrainCircuit className="w-3.5 h-3.5" /> Auto-Routing Logic
-                </h3>
-                <div className="bg-accent/50 border border-border rounded-xl p-4 space-y-3 hover:border-border/80 hover:bg-accent transition-all">
-                  {routingLogic ? (
-                    <>
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-muted-foreground">Task Type</span>
-                        <span className="text-xs font-bold text-primary">{routingLogic.taskType}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-muted-foreground">Selected Model</span>
-                        <span className="text-xs font-mono text-white font-bold bg-blue-500 px-2 py-0.5 rounded shadow-sm">{routingLogic.selectedModel}</span>
-                      </div>
-                      <div className="pt-3 mt-3 border-t border-border">
-                        <span className="text-xs text-muted-foreground/80 leading-relaxed block">
-                          Reasoning: {routingLogic.reasoning}
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-xs text-muted-foreground text-center py-2">Waiting for task...</div>
-                  )}
+              {transparencyTab === 'terminal' ? (
+                <>
+                  {/* Agent Trace */}
+                  <div className="space-y-3">
+                    <h3 className="text-[10px] font-bold text-primary uppercase tracking-widest flex items-center gap-2">
+                      <Terminal className="w-3.5 h-3.5" /> Agent Trace
+                    </h3>
+                    <div className="bg-background border border-border rounded-xl p-4 font-mono text-[10px] leading-relaxed text-muted-foreground h-48 overflow-y-auto no-scrollbar shadow-inner relative">
+                      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_0%,var(--color-primary)_50%,transparent_100%)] bg-[length:100%_4px] animate-[scan_2s_linear_infinite] pointer-events-none opacity-20" />
+                      {terminalLogs.map((log, idx) => {
+                        let colorClass = "text-muted-foreground";
+                        if (log.includes("[PLAN]")) colorClass = "text-primary";
+                        if (log.includes("Intent classified")) colorClass = "text-emerald-500";
+                        if (log.includes("[ACT]")) colorClass = "text-blue-500";
+                        if (log.includes("[OBSERVE]")) colorClass = "text-amber-500";
+                        return <motion.div initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} key={idx} className={colorClass}>{log}</motion.div>;
+                      })}
+                      <div className="text-primary mt-2 animate-pulse">_</div>
+                    </div>
+                  </div>
+
+                  {/* Routing Decision */}
+                  <div className="space-y-3">
+                    <h3 className="text-[10px] font-bold text-blue-500 uppercase tracking-widest flex items-center gap-2">
+                      <BrainCircuit className="w-3.5 h-3.5" /> Auto-Routing Logic
+                    </h3>
+                    <div className="bg-accent/50 border border-border rounded-xl p-4 space-y-3 hover:border-border/80 hover:bg-accent transition-all">
+                      {routingLogic ? (
+                        <>
+                          <div className="flex justify-between items-center pb-2 border-b border-border/50">
+                            <span className="text-[10px] text-muted-foreground">TASK</span>
+                            <span className="text-[10px] font-bold text-foreground">{routingLogic.taskType}</span>
+                          </div>
+                          <div className="flex justify-between items-center pb-2 border-b border-border/50">
+                            <span className="text-[10px] text-muted-foreground">MODEL</span>
+                            <span className="text-[10px] font-bold text-blue-400">{routingLogic.selectedModel}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-muted-foreground block mb-1">REASONING</span>
+                            <span className="text-[10px] text-foreground/80 leading-relaxed">{routingLogic.reasoning}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-[10px] text-muted-foreground text-center py-4">Awaiting task input...</div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="flex-1 flex flex-col min-h-[400px]">
+                  <h3 className="text-[10px] font-bold text-[#00f0ff] uppercase tracking-widest flex items-center gap-2 mb-3 shrink-0">
+                    <Network className="w-3.5 h-3.5" /> Execution Graph
+                  </h3>
+                  <div className="flex-1 relative">
+                    <AgentGraph />
+                  </div>
                 </div>
-              </div>
+              )}
+
 
               {/* Network Status */}
               <div className="space-y-3">

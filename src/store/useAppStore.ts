@@ -52,6 +52,8 @@ export type TransparencyState = {
   agentTrace: string[];
   routingLogic: { taskType: string; selectedModel: string; reasoning: string } | null;
   networkStatus: { outboundConn: number; egressKb: number };
+  graphNodes: any[];
+  graphEdges: any[];
 };
 
 interface AppState {
@@ -81,6 +83,8 @@ interface AppState {
   appendTrace: (log: string) => void;
   setRoutingLogic: (logic: TransparencyState['routingLogic']) => void;
   setNetworkStatus: (status: TransparencyState['networkStatus']) => void;
+  setGraph: (nodes: any[], edges: any[]) => void;
+  updateGraphNode: (id: string, data: any) => void;
   connectTransparencyWS: () => void;
 
   // UI State
@@ -236,7 +240,9 @@ export const useAppStore = create<AppState>()(
     transparency: {
       agentTrace: ["// Ultron OS v2.4.1", "> Waiting for telemetry..."],
       routingLogic: null,
-      networkStatus: { outboundConn: 0, egressKb: 0 }
+      networkStatus: { outboundConn: 0, egressKb: 0 },
+      graphNodes: [],
+      graphEdges: []
     },
     
     appendTrace: (log) => set((state) => {
@@ -251,6 +257,15 @@ export const useAppStore = create<AppState>()(
 
     setNetworkStatus: (status) => set((state) => ({
       transparency: { ...state.transparency, networkStatus: status }
+    })),
+    setGraph: (nodes, edges) => set((state) => ({
+      transparency: { ...state.transparency, graphNodes: nodes, graphEdges: edges }
+    })),
+    updateGraphNode: (id, data) => set((state) => ({
+      transparency: {
+        ...state.transparency,
+        graphNodes: state.transparency.graphNodes.map((n: any) => n.id === id ? { ...n, data: { ...n.data, ...data } } : n)
+      }
     })),
 
     connectTransparencyWS: () => {
@@ -273,6 +288,10 @@ export const useAppStore = create<AppState>()(
             useAppStore.getState().setRoutingLogic(payload.data);
           } else if (payload.type === "networkStatus") {
             useAppStore.getState().setNetworkStatus(payload.data);
+          } else if (payload.type === "graphInit") {
+            useAppStore.getState().setGraph(payload.data.nodes, payload.data.edges);
+          } else if (payload.type === "graphNodeUpdate") {
+            useAppStore.getState().updateGraphNode(payload.data.id, payload.data.data);
           }
         } catch (e) {
           console.error("Failed to parse WebSocket message", e);

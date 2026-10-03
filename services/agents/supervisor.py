@@ -60,6 +60,22 @@ class Supervisor:
 
         from services.utils.broadcaster import broadcaster
         import asyncio
+
+        # Init graph structure
+        nodes = [
+            {"id": "super", "position": {"x": 250, "y": 0}, "data": {"label": "Supervisor", "status": "active", "detail": "Classifying intent..."}, "type": "ultron"},
+            {"id": "rag", "position": {"x": 100, "y": 150}, "data": {"label": "RAG Agent", "status": "pending", "detail": "Pending"}, "type": "ultron"},
+            {"id": "doc", "position": {"x": 400, "y": 150}, "data": {"label": "Doc Gen", "status": "pending", "detail": "Pending"}, "type": "ultron"}
+        ]
+        edges = [
+            {"id": "e-super-rag", "source": "super", "target": "rag", "animated": True, "style": {"stroke": "#ffffff50"}},
+            {"id": "e-super-doc", "source": "super", "target": "doc", "animated": True, "style": {"stroke": "#ffffff50"}}
+        ]
+        asyncio.create_task(broadcaster.broadcast("graphInit", {"nodes": nodes, "edges": edges}))
+        asyncio.create_task(broadcaster.broadcast("graphNodeUpdate", {"id": "super", "data": {"status": "done", "detail": f"Intent: {intent}"}}))
+
+        from services.utils.broadcaster import broadcaster
+        import asyncio
         asyncio.create_task(broadcaster.broadcast("routingLogic", {
             "taskType": intent,
             "selectedModel": getattr(self.llm, "model", "Llama-3-8B"),
@@ -94,19 +110,31 @@ class Supervisor:
             from services.agents.rag_agent import RAGAgent
             agent = RAGAgent()
             asyncio.create_task(broadcaster.broadcast("agentTrace", f"> [EXEC] Handing off to RAG Agent..."))
-            return await agent.run(message)
+            asyncio.create_task(broadcaster.broadcast("graphNodeUpdate", {"id": "rag", "data": {"status": "active", "detail": "Retrieving context..."}}))
+            res = await agent.run(message)
+            asyncio.create_task(broadcaster.broadcast("graphNodeUpdate", {"id": "rag", "data": {"status": "done", "detail": "Completed"}}))
+            return res
 
         elif intent == "doc_gen":
             from services.agents.doc_gen_agent import DocGenAgent
             agent = DocGenAgent()
             effective_context = context if context else self.rag_context
             asyncio.create_task(broadcaster.broadcast("agentTrace", f"> [EXEC] Handing off to DocGen Agent (Context len: {len(effective_context)} chars)..."))
-            return await agent.run(message, effective_context, template_path=template_path)
+            asyncio.create_task(broadcaster.broadcast("graphNodeUpdate", {"id": "doc", "data": {"status": "active", "detail": "Generating document..."}}))
+            res = await agent.run(message, effective_context, template_path=template_path)
+            asyncio.create_task(broadcaster.broadcast("graphNodeUpdate", {"id": "doc", "data": {"status": "done", "detail": "Completed"}}))
+            return res
 
         else:
             # General chat — no agent, just the LLM directly.
             try:
+                # Fallback graph node if chat is selected
+                asyncio.create_task(broadcaster.broadcast("graphInit", {
+                    "nodes": [{"id": "chat", "position": {"x": 250, "y": 100}, "data": {"label": "Chat LLM", "status": "active", "detail": "Streaming response..."}, "type": "ultron"}], 
+                    "edges": []
+                }))
                 llm_response = self.llm.invoke(message)
+                asyncio.create_task(broadcaster.broadcast("graphNodeUpdate", {"id": "chat", "data": {"status": "done", "detail": "Done"}}))
                 return AgentResponse(
                     agent="chat",
                     status="success",
