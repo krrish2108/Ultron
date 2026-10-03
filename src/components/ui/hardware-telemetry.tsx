@@ -10,7 +10,7 @@ type MetricPoint = {
   cpu: number;
 };
 
-export function HardwareTelemetry() {
+export function HardwareTelemetry({ rightOpen = false }: { rightOpen?: boolean }) {
   const MAX_HISTORY = 30; // 30 seconds of history
   
   const [data, setData] = useState({
@@ -125,7 +125,10 @@ export function HardwareTelemetry() {
 
   const points = history.map((h, i) => `${getX(i, history.length)},${getY(isVram ? h.vram : isCpu ? h.cpu : h.ram)}`).join(" ");
   return (
-    <div className="absolute top-4 right-[72px] z-[70] flex" ref={containerRef}>
+    <div 
+      className={`absolute top-4 z-[70] flex transition-all duration-300 ${rightOpen ? 'right-[360px]' : 'right-[72px]'}`} 
+      ref={containerRef}
+    >
       {/* Status Pill matching the design */}
       <div className="h-10 px-4 rounded-[12px] border border-[#00f0ff]/30 backdrop-blur-md bg-[#0a0a0a]/90 flex items-center justify-center transition-all shadow-[0_0_15px_rgba(0,240,255,0.1)] hover:shadow-[0_0_20px_rgba(0,240,255,0.2)] hover:border-[#00f0ff]/50 cursor-default">
         

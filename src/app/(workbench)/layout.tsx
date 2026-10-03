@@ -495,7 +495,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
       </AnimatePresence>
       </div>
 
-      <HardwareTelemetry />
+      <HardwareTelemetry rightOpen={rightOpen} />
     </div>
   );
 }
