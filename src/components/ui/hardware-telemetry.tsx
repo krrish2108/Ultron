@@ -127,7 +127,7 @@ export function HardwareTelemetry() {
   return (
     <div className="absolute top-4 right-[72px] z-[70] flex" ref={containerRef}>
       {/* Status Pill matching the design */}
-      <div className="h-10 px-4 rounded-[12px] border border-[#d946ef]/60 backdrop-blur-md bg-[#0a0a0a]/90 flex items-center justify-center transition-all shadow-[0_0_15px_rgba(217,70,239,0.1)] hover:shadow-[0_0_20px_rgba(217,70,239,0.2)] cursor-default">
+      <div className="h-10 px-4 rounded-[12px] border border-[#00f0ff]/30 backdrop-blur-md bg-[#0a0a0a]/90 flex items-center justify-center transition-all shadow-[0_0_15px_rgba(0,240,255,0.1)] hover:shadow-[0_0_20px_rgba(0,240,255,0.2)] hover:border-[#00f0ff]/50 cursor-default">
         
         {/* CPU indicator */}
         <div 
@@ -161,16 +161,16 @@ export function HardwareTelemetry() {
 
         {/* RAM indicator */}
         <div 
-          className="flex items-center gap-1.5 text-emerald-500 border-l border-white/10 pl-4 py-2 px-3 hover:bg-white/5 rounded cursor-pointer"
+          className="flex items-center gap-1.5 text-red-500 border-l border-white/10 pl-4 py-2 px-3 hover:bg-white/5 rounded cursor-pointer"
           onClick={() => setHoverTab(prev => prev === 'ram' ? null : 'ram')}
         >
           <HardDrive className="w-3.5 h-3.5 opacity-80" />
           <span className="text-[10px] font-bold tracking-[0.1em] uppercase opacity-90">RAM</span>
-          <span className="text-[10px] font-mono text-emerald-400/80 ml-0.5">
+          <span className="text-[10px] font-mono text-red-400/80 ml-0.5">
             {data.ram_used.toFixed(1)}G
           </span>
-          <div className="w-[5px] h-3.5 bg-emerald-950 rounded-[2px] overflow-hidden flex items-end ml-1 origin-bottom">
-            <div className="w-full bg-emerald-500 rounded-[2px]" style={{ height: `${(data.ram_used / Math.max(data.ram_total, 1)) * 100}%` }} />
+          <div className="w-[5px] h-3.5 bg-red-950 rounded-[2px] overflow-hidden flex items-end ml-1 origin-bottom">
+            <div className="w-full bg-red-500 rounded-[2px]" style={{ height: `${(data.ram_used / Math.max(data.ram_total, 1)) * 100}%` }} />
           </div>
         </div>
 
@@ -264,7 +264,7 @@ export function HardwareTelemetry() {
                         <polyline 
                           points={points} 
                           fill="none" 
-                          stroke="#d946ef" 
+                          stroke="#ef4444" 
                           strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
