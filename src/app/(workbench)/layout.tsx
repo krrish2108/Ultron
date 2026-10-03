@@ -13,6 +13,7 @@ import {
 import { useAppStore } from "@/store/useAppStore";
 import { SettingsModal } from "@/components/ui/settings-modal";
 import { HardwareTelemetry } from "@/components/ui/hardware-telemetry";
+import { BottomTelemetryBar } from "@/components/ui/bottom-telemetry-bar";
 
 export default function WorkbenchLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -37,6 +38,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
   const terminalLogs = useAppStore(state => state.transparency.agentTrace);
   const routingLogic = useAppStore(state => state.transparency.routingLogic);
   const networkStatus = useAppStore(state => state.transparency.networkStatus);
+  const showBottomTelemetryBar = useAppStore(state => state.userSettings.showBottomTelemetryBar);
 
   useEffect(() => {
     connectTransparencyWS();
@@ -459,6 +461,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
       </div>
 
       <HardwareTelemetry />
+      {showBottomTelemetryBar && <BottomTelemetryBar />}
     </div>
   );
 }

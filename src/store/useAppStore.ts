@@ -105,6 +105,7 @@ interface AppState {
     ultronCursor: boolean;
     cursorEffects: boolean;
     autoOpenArtifacts: boolean;
+    showBottomTelemetryBar: boolean;
   };
   updateUserSettings: (updates: Partial<AppState['userSettings']>) => void;
 }
@@ -310,6 +311,7 @@ export const useAppStore = create<AppState>()(
       ultronCursor: true,
       cursorEffects: true,
       autoOpenArtifacts: true,
+      showBottomTelemetryBar: true,
     },
     updateUserSettings: (updates) => set((state) => ({
       userSettings: { ...state.userSettings, ...updates }

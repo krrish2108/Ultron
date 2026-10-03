@@ -464,6 +464,17 @@ export function SettingsModal() {
                           <div className="w-9 h-5 bg-accent peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
                         </label>
                       </div>
+
+                      <div className="flex items-center justify-between pb-4 border-b border-border/50">
+                        <div>
+                          <span className="text-sm text-muted-foreground block mb-1">Legacy Telemetry Bar</span>
+                          <p className="text-[13px] text-muted-foreground/70">Show the classic full-width hardware telemetry bar at the bottom.</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer ml-4 shrink-0">
+                          <input type="checkbox" className="sr-only peer" checked={userSettings.showBottomTelemetryBar ?? true} onChange={(e) => updateUserSettings({ showBottomTelemetryBar: e.target.checked })} />
+                          <div className="w-9 h-5 bg-accent peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                        </label>
+                      </div>
                     </div>
                   </div>
 
