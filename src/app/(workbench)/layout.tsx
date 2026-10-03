@@ -292,7 +292,10 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
 
       {/* CENTER MAIN */}
       <main className="flex-1 flex flex-col h-full overflow-hidden relative z-0 bg-transparent">
-        {children}
+        <div className="flex-1 relative overflow-hidden flex flex-col">
+          {children}
+        </div>
+        {showBottomTelemetryBar && <BottomTelemetryBar />}
       </main>
 
       {/* RIGHT TRANSPARENCY PANEL */}
@@ -461,7 +464,6 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
       </div>
 
       <HardwareTelemetry />
-      {showBottomTelemetryBar && <BottomTelemetryBar />}
     </div>
   );
 }

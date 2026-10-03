@@ -45,7 +45,7 @@ export function BottomTelemetryBar() {
   const contextPercent = Math.min(100, Math.max(0, (data.context_used / Math.max(1, data.context_total)) * 100));
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 h-10 bg-[#060606] border-t border-white/5 flex items-center px-4 justify-between z-50 font-sans select-none shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
+    <div className="w-full shrink-0 h-10 bg-[#060606] border-t border-white/5 flex items-center px-4 justify-between z-50 font-sans select-none shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
       
       <div className="flex items-center gap-10 flex-1">
         {/* VRAM */}
