@@ -15,6 +15,44 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { useAppStore } from '@/store/useAppStore';
+import dagre from 'dagre';
+
+const dagreGraph = new dagre.graphlib.Graph();
+dagreGraph.setDefaultEdgeLabel(() => ({}));
+
+const nodeWidth = 180;
+const nodeHeight = 80;
+
+const getLayoutedElements = (nodes: any[], edges: any[], direction = 'TB') => {
+  const isHorizontal = direction === 'LR';
+  dagreGraph.setGraph({ rankdir: direction, nodesep: 50, ranksep: 100 });
+
+  nodes.forEach((node) => {
+    dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+  });
+
+  edges.forEach((edge) => {
+    dagreGraph.setEdge(edge.source, edge.target);
+  });
+
+  dagre.layout(dagreGraph);
+
+  nodes.forEach((node) => {
+    const nodeWithPosition = dagreGraph.node(node.id);
+    node.targetPosition = isHorizontal ? 'left' : 'top';
+    node.sourcePosition = isHorizontal ? 'right' : 'bottom';
+    
+    // We are shifting the dagre node position (anchor=center center) to the top left
+    // so it matches the React Flow node anchor point (top left).
+    node.position = {
+      x: nodeWithPosition.x - nodeWidth / 2,
+      y: nodeWithPosition.y - nodeHeight / 2,
+    };
+    return node;
+  });
+
+  return { layoutedNodes: nodes, layoutedEdges: edges };
+};
 
 // Custom Node component for Ultron Theme
 const UltronNode = ({ data, isConnectable }: any) => {
@@ -63,8 +101,15 @@ export function AgentGraph() {
 
   // Update local state when store changes
   React.useEffect(() => {
-    if (graphNodes.length > 0) setNodes(graphNodes);
-    if (graphEdges.length > 0) setEdges(graphEdges);
+    if (graphNodes.length > 0) {
+      // Auto-layout nodes before passing them to react-flow
+      const { layoutedNodes, layoutedEdges } = getLayoutedElements(
+        JSON.parse(JSON.stringify(graphNodes)), // clone to avoid mutating store directly
+        JSON.parse(JSON.stringify(graphEdges))
+      );
+      setNodes(layoutedNodes);
+      setEdges(layoutedEdges);
+    }
   }, [graphNodes, graphEdges, setNodes, setEdges]);
 
   // If graph is empty, show a fallback message
