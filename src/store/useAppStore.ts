@@ -110,6 +110,7 @@ interface AppState {
     cursorEffects: boolean;
     autoOpenArtifacts: boolean;
     showBottomTelemetryBar: boolean;
+    isScrubbingMode: boolean;
   };
   updateUserSettings: (updates: Partial<AppState['userSettings']>) => void;
 }
@@ -331,6 +332,7 @@ export const useAppStore = create<AppState>()(
       cursorEffects: true,
       autoOpenArtifacts: true,
       showBottomTelemetryBar: true,
+      isScrubbingMode: false,
     },
     updateUserSettings: (updates) => set((state) => ({
       userSettings: { ...state.userSettings, ...updates }
