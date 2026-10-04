@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Cpu, HardDrive, Maximize, Activity } from "lucide-react";
+import { Cpu, HardDrive, Maximize, Activity, ShieldAlert, ShieldCheck } from "lucide-react";
+import { useAppStore } from "@/store/useAppStore";
 
 type MetricPoint = {
   vram: number;
@@ -12,6 +13,8 @@ type MetricPoint = {
 
 export function HardwareTelemetry({ rightOpen = false }: { rightOpen?: boolean }) {
   const MAX_HISTORY = 30; // 30 seconds of history
+  const isScrubbingMode = useAppStore(state => state.userSettings.isScrubbingMode);
+  const updateUserSettings = useAppStore(state => state.updateUserSettings);
   
   const [data, setData] = useState({
     vram_used: 0,
@@ -132,6 +135,16 @@ export function HardwareTelemetry({ rightOpen = false }: { rightOpen?: boolean }
       {/* Status Pill matching the design */}
       <div className="h-10 px-4 rounded-[12px] border border-[#00f0ff]/30 backdrop-blur-md bg-[#0a0a0a]/90 flex items-center justify-center transition-all shadow-[0_0_15px_rgba(0,240,255,0.1)] hover:shadow-[0_0_20px_rgba(0,240,255,0.2)] hover:border-[#00f0ff]/50 cursor-default">
         
+        {/* Scrubbing Toggle */}
+        <div 
+          className={`flex items-center gap-1.5 py-2 px-3 -ml-2 mr-2 rounded cursor-pointer transition-colors border-r border-white/10 pr-4 ${isScrubbingMode ? 'text-amber-500 hover:bg-amber-500/10' : 'text-muted-foreground hover:text-white hover:bg-white/5'}`}
+          onClick={() => updateUserSettings({ isScrubbingMode: !isScrubbingMode })}
+          title="Toggle Confidentiality Scrubbing"
+        >
+          {isScrubbingMode ? <ShieldAlert className="w-4 h-4 animate-pulse" /> : <ShieldCheck className="w-4 h-4 opacity-50" />}
+          <span className="text-[9px] font-bold tracking-[0.1em] uppercase opacity-90">{isScrubbingMode ? 'Scrubbing: ON' : 'Scrubbing: OFF'}</span>
+        </div>
+
         {/* CPU indicator */}
         <div 
           className="flex items-center gap-1.5 text-blue-500 hover:bg-white/5 py-2 px-2 -ml-2 rounded cursor-pointer"

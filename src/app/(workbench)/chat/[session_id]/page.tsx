@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, use, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { UltronView, UltronViewAsset } from "@/components/ui/ultron-view";
@@ -11,6 +12,7 @@ import { Paperclip, Send, FileText, Download, FileUp, ImageIcon, Globe, X, Chevr
 import { useAppStore, Message, Asset } from "@/store/useAppStore";
 import { AudioVisualizer } from "@/components/ui/audio-visualizer";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
+import { RedactedBadge } from "@/components/ui/redacted-badge";
 
 const COMMAND_SNIPPETS = [
   { id: 's1', command: 'summarize', label: 'Summarize context', text: 'Summarize the attached files and provide key takeaways.' },
@@ -98,6 +100,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
   const setSettingsOpen = useAppStore(state => state.setSettingsOpen);
   const autoOpenArtifacts = useAppStore(state => state.userSettings.autoOpenArtifacts);
   const chatFont = useAppStore(state => state.userSettings.chatFont);
+  const isScrubbingMode = useAppStore(state => state.userSettings.isScrubbingMode);
 
   const messages = session?.messages || [];
 
@@ -410,6 +413,15 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
 
                       textContent = textContent.replace(/\\n/g, '\n');
 
+                      if (isScrubbingMode) {
+                        // Replace IPv4 addresses
+                        textContent = textContent.replace(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g, '<redacted type="ip">$&</redacted>');
+                        // Replace Email addresses
+                        textContent = textContent.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, '<redacted type="email">$&</redacted>');
+                        // Replace MAC addresses
+                        textContent = textContent.replace(/\b([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})\b/g, '<redacted type="mac">$&</redacted>');
+                      }
+
                       const generatedFile = fileMatch ? fileMatch[1] : null;
                       const fileName = generatedFile ? generatedFile.split(/[/\\]/).pop() || "Document" : "";
 
@@ -424,6 +436,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                             ) : (
                               <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
+                                rehypePlugins={[rehypeRaw]}
                                 components={{
                                   p: ({ node, ...props }) => <p className="mb-3 last:mb-0" {...props} />,
                                   strong: ({ node, ...props }) => <strong className="font-bold text-foreground" {...props} />,
@@ -442,6 +455,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                                   td: ({ node, ...props }) => <td className="px-4 py-3 text-sm border-b border-border/30" {...props} />,
                                   blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-primary bg-primary/5 px-5 py-3 rounded-r-lg my-4 text-foreground/90 italic shadow-[inset_4px_0_0_var(--color-primary)]" {...props} />,
                                   code: CodeBlock,
+                                  redacted: ({ node, ...props }: any) => <RedactedBadge type={props.type || 'data'}>{props.children}</RedactedBadge>,
                                 }}
                               >
                                 {textContent}
