@@ -279,9 +279,35 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
             <button suppressHydrationWarning onClick={() => setLeftOpen(true)} className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center border border-border hover:border-primary hover:shadow-[0_0_15px_var(--color-primary)] transition-all mb-8 group">
               <Image src="/logo.jpeg" alt="Logo" width={40} height={40} className="w-full h-full object-cover group-hover:scale-110 transition-transform" suppressHydrationWarning />
             </button>
-            <Link href="/home" className="w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 hover:shadow-[0_0_15px_var(--color-primary)] flex items-center justify-center mb-6 transition-all group">
+            <Link href="/home" title="New Task" className="w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 hover:shadow-[0_0_15px_var(--color-primary)] flex items-center justify-center mb-6 transition-all group relative">
               <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
             </Link>
+
+            {/* Navigation Icons */}
+            <div className="flex flex-col gap-4 w-full px-2 items-center">
+              <Link href="/enclaves" title="Enclaves" className="w-10 h-10 rounded-xl hover:bg-accent hover:text-foreground text-muted-foreground flex items-center justify-center transition-all group relative">
+                <FolderOpen className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                <div className="absolute left-full ml-4 px-2 py-1 bg-popover text-foreground text-xs rounded border border-border opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">Enclaves</div>
+              </Link>
+              
+              <Link href="/assets" title="Assets" className="w-10 h-10 rounded-xl hover:bg-accent hover:text-foreground text-muted-foreground flex items-center justify-center transition-all group relative">
+                <Box className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                <div className="absolute left-full ml-4 px-2 py-1 bg-popover text-foreground text-xs rounded border border-border opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">Assets</div>
+              </Link>
+
+              <div className="w-6 h-px bg-border/50 my-2" />
+
+              <button onClick={() => setComingSoon("Source")} title="Source" className="w-10 h-10 rounded-xl hover:bg-accent hover:text-foreground text-muted-foreground flex items-center justify-center transition-all group relative">
+                <Code2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                <div className="absolute left-full ml-4 px-2 py-1 bg-popover text-foreground text-xs rounded border border-border opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">Source</div>
+              </button>
+
+              <button onClick={() => setComingSoon("Customize")} title="Customize" className="w-10 h-10 rounded-xl hover:bg-accent hover:text-foreground text-muted-foreground flex items-center justify-center transition-all group relative">
+                <SlidersHorizontal className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                <div className="absolute left-full ml-4 px-2 py-1 bg-popover text-foreground text-xs rounded border border-border opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-50">Customize</div>
+              </button>
+            </div>
+
             <div className="flex-1" />
               <div className="mt-auto mb-4 p-2 w-full flex justify-center">
                 <button suppressHydrationWarning onClick={() => setSettingsOpen(true)} className="p-3 bg-accent/50 hover:bg-accent rounded-xl transition-all">
