@@ -144,6 +144,38 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
     "Synthesizing response...",
   ];
 
+  const openArtifact = async (generatedFile: string) => {
+    const fileName = generatedFile.split(/[/\\]/).pop() || "Document";
+    const fileUrl = `http://localhost:8000/download?path=${encodeURIComponent(generatedFile)}`;
+    const type = fileName.split('.').pop()?.toLowerCase() || 'file';
+    
+    let content = undefined;
+    
+    // If it's a text-based file, fetch the content so UltronView can render it in the code block
+    if (type.match(/^(py|js|ts|tsx|md|txt|json|sh|yml|yaml|css|html|csv)$/)) {
+      try {
+        const res = await fetch(fileUrl);
+        if (res.ok) {
+          content = await res.text();
+        }
+      } catch (err) {
+        console.error("Failed to fetch artifact content", err);
+      }
+    }
+
+    setPreviewFile(prev => {
+      if (prev?.name === fileName) return prev;
+      return {
+        id: Date.now().toString(),
+        name: fileName,
+        type,
+        size: "--",
+        fileUrl,
+        content
+      };
+    });
+  };
+
   // Auto-open artifact preview
   useEffect(() => {
     if (!autoOpenArtifacts) return;
@@ -153,21 +185,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
       if (lastMessage.role === 'assistant' && lastMessage.status === 'done') {
         const fileMatch = lastMessage.content.match(/\n\nFile: (.*)$/);
         if (fileMatch) {
-          const generatedFile = fileMatch[1];
-          const fileName = generatedFile.split(/[/\\]/).pop() || "Document";
-          const fileUrl = `http://localhost:8000/download?path=${encodeURIComponent(generatedFile)}`;
-          const type = fileName.split('.').pop() || 'file';
-          
-          setPreviewFile(prev => {
-            if (prev?.name === fileName) return prev;
-            return {
-              id: Date.now().toString(),
-              name: fileName,
-              type,
-              size: "--",
-              fileUrl
-            };
-          });
+          openArtifact(fileMatch[1]);
         }
       }
     }
@@ -464,14 +482,8 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                           </div>
                           {generatedFile && (
                             <div 
-                              onClick={() => setPreviewFile({
-                                id: Date.now().toString(),
-                                name: fileName,
-                                type: fileName.split('.').pop() || 'file',
-                                size: "--",
-                                fileUrl: `http://localhost:8000/download?path=${encodeURIComponent(generatedFile)}`
-                              })}
-                              className="bg-background border border-primary/30 rounded-xl p-4 flex flex-col gap-4 mt-4 hover:border-primary transition-colors group relative overflow-hidden cursor-pointer"
+                              onClick={() => openArtifact(generatedFile)}
+                              className="bg-background border border-primary/30 rounded-xl p-4 flex flex-col gap-4 mt-4 hover:border-primary transition-colors group relative overflow-hidden cursor-pointer shadow-[0_0_15px_rgba(0,240,255,0.05)]"
                             >
                               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent -translate-x-[100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
