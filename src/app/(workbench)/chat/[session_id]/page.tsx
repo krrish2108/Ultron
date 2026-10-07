@@ -456,25 +456,25 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                                 remarkPlugins={[remarkGfm]}
                                 rehypePlugins={[rehypeRaw]}
                                 components={{
-                                  p: ({ node, ...props }) => <p className="mb-3 last:mb-0" {...props} />,
-                                  strong: ({ node, ...props }) => <strong className="font-bold text-foreground" {...props} />,
-                                  ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-4 space-y-1" {...props} />,
-                                  ol: ({ node, ...props }) => <ol className="list-decimal pl-5 mb-4 space-y-1" {...props} />,
-                                  li: ({ node, ...props }) => <li className="pl-1" {...props} />,
-                                  h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mb-4 mt-6 text-foreground first:mt-0" {...props} />,
-                                  h2: ({ node, ...props }) => <h2 className="text-xl font-bold mb-3 mt-5 text-foreground first:mt-0" {...props} />,
-                                  h3: ({ node, ...props }) => <h3 className="text-lg font-bold mb-2 mt-4 text-foreground first:mt-0" {...props} />,
-                                  a: ({ node, ...props }) => <a className="text-primary hover:underline" {...props} />,
-                                  table: ({ node, ...props }) => <div className="overflow-x-auto my-4 border border-border rounded-xl shadow-sm"><table className="w-full text-left border-collapse" {...props} /></div>,
-                                  thead: ({ node, ...props }) => <thead className="bg-accent/50 text-foreground" {...props} />,
-                                  tbody: ({ node, ...props }) => <tbody className="divide-y divide-border/50 bg-card/20" {...props} />,
-                                  tr: ({ node, ...props }) => <tr className="hover:bg-accent/20 transition-colors" {...props} />,
-                                  th: ({ node, ...props }) => <th className="px-4 py-3 text-sm font-bold border-b border-border whitespace-nowrap text-muted-foreground uppercase tracking-wider" {...props} />,
-                                  td: ({ node, ...props }) => <td className="px-4 py-3 text-sm border-b border-border/30" {...props} />,
-                                  blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-primary bg-primary/5 px-5 py-3 rounded-r-lg my-4 text-foreground/90 italic shadow-[inset_4px_0_0_var(--color-primary)]" {...props} />,
+                                  p: ({ node, ...props }: any) => <p className="mb-3 last:mb-0" {...props} />,
+                                  strong: ({ node, ...props }: any) => <strong className="font-bold text-foreground" {...props} />,
+                                  ul: ({ node, ...props }: any) => <ul className="list-disc pl-5 mb-4 space-y-1" {...props} />,
+                                  ol: ({ node, ...props }: any) => <ol className="list-decimal pl-5 mb-4 space-y-1" {...props} />,
+                                  li: ({ node, ...props }: any) => <li className="pl-1" {...props} />,
+                                  h1: ({ node, ...props }: any) => <h1 className="text-2xl font-bold mb-4 mt-6 text-foreground first:mt-0" {...props} />,
+                                  h2: ({ node, ...props }: any) => <h2 className="text-xl font-bold mb-3 mt-5 text-foreground first:mt-0" {...props} />,
+                                  h3: ({ node, ...props }: any) => <h3 className="text-lg font-bold mb-2 mt-4 text-foreground first:mt-0" {...props} />,
+                                  a: ({ node, ...props }: any) => <a className="text-primary hover:underline" {...props} />,
+                                  table: ({ node, ...props }: any) => <div className="overflow-x-auto my-4 border border-border rounded-xl shadow-sm"><table className="w-full text-left border-collapse" {...props} /></div>,
+                                  thead: ({ node, ...props }: any) => <thead className="bg-accent/50 text-foreground" {...props} />,
+                                  tbody: ({ node, ...props }: any) => <tbody className="divide-y divide-border/50 bg-card/20" {...props} />,
+                                  tr: ({ node, ...props }: any) => <tr className="hover:bg-accent/20 transition-colors" {...props} />,
+                                  th: ({ node, ...props }: any) => <th className="px-4 py-3 text-sm font-bold border-b border-border whitespace-nowrap text-muted-foreground uppercase tracking-wider" {...props} />,
+                                  td: ({ node, ...props }: any) => <td className="px-4 py-3 text-sm border-b border-border/30" {...props} />,
+                                  blockquote: ({ node, ...props }: any) => <blockquote className="border-l-4 border-primary bg-primary/5 px-5 py-3 rounded-r-lg my-4 text-foreground/90 italic shadow-[inset_4px_0_0_var(--color-primary)]" {...props} />,
                                   code: CodeBlock,
                                   redacted: ({ node, ...props }: any) => <RedactedBadge type={props.type || 'data'}>{props.children}</RedactedBadge>,
-                                }}
+                                } as any}
                               >
                                 {textContent}
                               </ReactMarkdown>
