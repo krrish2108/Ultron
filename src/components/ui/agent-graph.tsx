@@ -134,7 +134,7 @@ export function AgentGraph() {
         className="bg-transparent"
         minZoom={0.2}
       >
-        <Background color="#ffffff" gap={16} size={1} opacity={0.05} />
+        <Background color="#ffffff" gap={16} size={1} className="opacity-5" />
       </ReactFlow>
     </div>
   );
