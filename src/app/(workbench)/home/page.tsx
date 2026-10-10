@@ -61,7 +61,13 @@ export default function WorkbenchHome() {
 
   useEffect(() => {
     if (!isListening && transcript) {
-      setInputText(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + transcript);
+      const newText = inputText + (inputText && !inputText.endsWith(' ') ? ' ' : '') + transcript;
+      setInputText(newText);
+      // Auto-send in voice command mode after a brief delay
+      setTimeout(() => {
+        const sendBtn = document.getElementById('home-send-message-btn');
+        if (sendBtn) sendBtn.click();
+      }, 100);
     }
   }, [isListening, transcript]);
 
@@ -502,6 +508,7 @@ export default function WorkbenchHome() {
                 </button>
 
                 <button 
+                  id="home-send-message-btn"
                   onClick={handleSend}
                   className="h-[50px] px-5 bg-gradient-to-r from-primary to-blue-600 text-white rounded-xl hover:shadow-[0_0_20px_var(--color-primary)] hover:scale-105 transition-all ml-2 flex shrink-0 items-center justify-center group/btn overflow-hidden relative"
                 >

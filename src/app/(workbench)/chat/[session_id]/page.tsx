@@ -133,7 +133,14 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
 
   useEffect(() => {
     if (!isListening && transcript) {
-      setInputText(prev => prev + (prev && !prev.endsWith(' ') ? ' ' : '') + transcript);
+      const newText = inputText + (inputText && !inputText.endsWith(' ') ? ' ' : '') + transcript;
+      setInputText(newText);
+      // Auto-send in voice command mode after a brief delay to ensure state updates
+      setTimeout(() => {
+        const fakeEvent = new Event('submit');
+        const sendBtn = document.getElementById('send-message-btn');
+        if (sendBtn) sendBtn.click();
+      }, 100);
     }
   }, [isListening, transcript]);
 
@@ -947,6 +954,7 @@ export default function ChatSession({ params }: { params: Promise<{ session_id: 
                 </button>
 
                 <button
+                  id="send-message-btn"
                   onClick={handleSend}
                   className={`h-[50px] px-5 rounded-xl transition-all ml-2 flex shrink-0 items-center justify-center group/btn overflow-hidden relative ${inputText.trim() || attachments.length > 0 ? 'bg-gradient-to-r from-primary to-blue-600 text-white hover:shadow-[0_0_20px_var(--color-primary)] hover:scale-105' : 'bg-accent/50 text-muted-foreground'}`}
                 >
