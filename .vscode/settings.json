@@ -1,5 +1,6 @@
 {
   "css.lint.unknownRules": "ignore",
   "css.lint.unknownAtRules": "ignore",
-  "python.defaultInterpreterPath": "d:\\Krish\\Infinity Webs\\Ultron\\.venv\\Scripts\\python.exe"
+  "python.defaultInterpreterPath": "d:\\Krish\\Infinity Webs\\Ultron\\.venv\\Scripts\\python.exe",
+  "python.analysis.extraPaths": ["./"]
 }
