@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { useAppStore, Asset } from "@/store/useAppStore";
 import { AudioVisualizer } from "@/components/ui/audio-visualizer";
 import { useSpeechRecognition } from "@/hooks/useSpeechRecognition";
-import { LiveThreatMap } from "@/components/ui/live-threat-map";
 
 const COMMAND_SNIPPETS = [
   { id: 's1', command: 'summarize', label: 'Summarize context', text: 'Summarize the attached files and provide key takeaways.' },
@@ -183,16 +182,13 @@ export default function WorkbenchHome() {
       
       {/* Dynamic Background Elements for Empty State */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden flex items-center justify-center z-0">
-        <LiveThreatMap />
-        
-        {/* Subtle glowing rings over the globe */}
         <motion.div 
-          animate={{ scale: [1, 1.5, 1], opacity: [0, 0.05, 0] }} 
+          animate={{ scale: [1, 1.5, 1], opacity: [0, 0.1, 0] }} 
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
           className="absolute w-[400px] h-[400px] border border-[#00f0ff] rounded-full"
         />
         <motion.div 
-          animate={{ scale: [0.8, 2, 0.8], opacity: [0, 0.02, 0] }} 
+          animate={{ scale: [0.8, 2, 0.8], opacity: [0, 0.05, 0] }} 
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
           className="absolute w-[600px] h-[600px] border border-[#3b82f6] rounded-full"
         />
