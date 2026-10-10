@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Box, FileText, Download, Scan, ZoomIn, ZoomOut, Database, Loader2, Maximize, X } from "lucide-react";
+import { Box, FileText, Download, Scan, ZoomIn, ZoomOut, Database, Loader2, Maximize, X, Play, TerminalSquare } from "lucide-react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
@@ -22,12 +22,27 @@ type UltronViewProps = {
 export function UltronView({ asset, onClose, className = "" }: UltronViewProps) {
   const [zoom, setZoom] = useState(1);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [showTerminal, setShowTerminal] = useState(false);
+  const [executionOutput, setExecutionOutput] = useState<string[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
+  const terminalRef = useRef<HTMLDivElement>(null);
+
+  const isExecutable = asset.type === 'py' || asset.name.endsWith('.py') || asset.type === 'sh' || asset.name.endsWith('.sh') || asset.type === 'js' || asset.name.endsWith('.js') || asset.type === 'ts';
 
   useEffect(() => {
     setZoom(1);
     setIsAnalyzing(false);
+    setIsExecuting(false);
+    setShowTerminal(false);
+    setExecutionOutput([]);
   }, [asset]);
+
+  useEffect(() => {
+    if (terminalRef.current) {
+      terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+    }
+  }, [executionOutput]);
 
   const handleZoomIn = () => setZoom(z => Math.min(z + 0.25, 3));
   const handleZoomOut = () => setZoom(z => Math.max(z - 0.25, 0.5));
@@ -61,6 +76,28 @@ export function UltronView({ asset, onClose, className = "" }: UltronViewProps) 
     setTimeout(() => setIsAnalyzing(false), 3000);
   };
 
+  const handleExecute = () => {
+    setShowTerminal(true);
+    setIsExecuting(true);
+    setExecutionOutput([
+      `[ULTRON ENCLAVE] Initiating secure execution container...`,
+      `> Executing: ${asset.name}`
+    ]);
+    
+    // Simulate real execution delay
+    setTimeout(() => setExecutionOutput(prev => [...prev, "[SYSTEM] Analyzing dependencies..."]), 800);
+    setTimeout(() => setExecutionOutput(prev => [...prev, "[SYSTEM] Dependencies verified. Booting sandbox..."]), 1500);
+    setTimeout(() => setExecutionOutput(prev => [...prev, "[STDOUT] Target acquired. Running payload..."]), 2200);
+    
+    // Some random simulated output
+    setTimeout(() => setExecutionOutput(prev => [...prev, "[STDOUT] Scan complete: 4 threats identified.", "[STDOUT] Applying patches..."]), 3500);
+    
+    setTimeout(() => {
+      setExecutionOutput(prev => [...prev, "\n[SYSTEM] Execution complete.", "Process exited with code 0"]);
+      setIsExecuting(false);
+    }, 4500);
+  };
+
   return (
     <div ref={containerRef} className={`bg-[#050505] flex flex-col overflow-hidden relative ${className}`}>
       {/* UltronView Header */}
@@ -87,6 +124,16 @@ export function UltronView({ asset, onClose, className = "" }: UltronViewProps) 
         
         {/* UltronView Toolbar */}
         <div className="flex items-center gap-1.5 shrink-0 ml-2">
+          {isExecutable && (
+            <button 
+              onClick={handleExecute} 
+              disabled={isExecuting} 
+              className={`bg-primary/10 hover:bg-primary/20 disabled:opacity-50 border border-primary/30 text-primary py-1.5 px-3 text-xs font-bold rounded-lg flex items-center gap-2 transition-colors ${isExecuting ? 'animate-pulse' : ''}`}
+            >
+              {isExecuting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5 fill-current" />} 
+              <span className="hidden lg:inline">{isExecuting ? 'Running...' : 'Deploy & Run'}</span>
+            </button>
+          )}
           <button onClick={handleAnalyze} disabled={isAnalyzing} className="bg-white/5 hover:bg-white/10 disabled:opacity-50 border border-white/10 text-white py-1.5 px-3 text-xs font-bold rounded-lg flex items-center gap-2 transition-colors">
             {isAnalyzing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Scan className="w-3.5 h-3.5" />} 
             <span className="hidden lg:inline">{isAnalyzing ? 'Analyzing...' : 'Analyze'}</span>
@@ -217,6 +264,43 @@ export function UltronView({ asset, onClose, className = "" }: UltronViewProps) 
           </div>
         )}
       </div>
+      
+      {/* Execute in Enclave Terminal */}
+      <AnimatePresence>
+        {showTerminal && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: '35%', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="border-t border-primary/30 bg-[#020202] flex flex-col relative z-20 shadow-[0_-10px_40px_rgba(0,240,255,0.1)]"
+          >
+            <div className="flex items-center justify-between px-4 py-2 border-b border-white/5 bg-[#080808]">
+              <div className="flex items-center gap-2">
+                <TerminalSquare className="w-4 h-4 text-primary" />
+                <span className="text-xs font-mono font-bold text-white/80">ENCLAVE TERMINAL</span>
+                {isExecuting && <span className="w-2 h-2 rounded-full bg-primary animate-pulse ml-2" />}
+              </div>
+              <button 
+                onClick={() => setShowTerminal(false)}
+                className="text-white/40 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div ref={terminalRef} className="flex-1 overflow-auto p-4 font-mono text-[13px] text-green-400 leading-relaxed custom-scrollbar">
+              {executionOutput.map((line, i) => (
+                <div key={i} className={`${line.startsWith('[STDOUT]') ? 'text-white/80' : line.startsWith('[ULTRON') ? 'text-primary font-bold' : ''}`}>
+                  {line}
+                </div>
+              ))}
+              {isExecuting && (
+                <div className="animate-pulse inline-block w-2 h-4 bg-green-400 ml-1 translate-y-1" />
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
