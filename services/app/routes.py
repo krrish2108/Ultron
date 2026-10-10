@@ -5,8 +5,6 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, Request, WebSock
 from fastapi.responses import StreamingResponse, FileResponse
 import logging
 
-from websockets import route
-
 logger = logging.getLogger(__name__)
 
 from services.utils.ingest import ingest_document
