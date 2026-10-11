@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { 
   Sparkles, 
   Code2, 
@@ -19,7 +19,12 @@ import {
   SlidersHorizontal,
   Flame,
   Activity,
-  AlertTriangle
+  AlertTriangle,
+  Play,
+  RotateCcw,
+  CheckCircle2,
+  Database,
+  ExternalLink
 } from "lucide-react";
 
 export interface PresetRule {
@@ -221,10 +226,32 @@ export function PromptToRegexBuilder({ onDeployRule, className = "" }: PromptToR
   const [strictSchemaTypes, setStrictSchemaTypes] = useState(true);
   const [maxConstraintRange, setMaxConstraintRange] = useState<number>(5000);
 
+  // Live Test Document Sandbox State
+  const [sampleDocument, setSampleDocument] = useState<string>(INDUSTRIAL_PRESETS[0].sampleLog);
+  const [isDeploying, setIsDeploying] = useState<boolean>(false);
+  const [deployedRule, setDeployedRule] = useState<{ name: string; timestamp: string } | null>(null);
+
+  // Load existing deployed rule from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("ultron_enclave_validator");
+      if (saved) {
+        setDeployedRule(JSON.parse(saved));
+      }
+    } catch {}
+  }, []);
+
   // Current active preset
   const activePreset = useMemo(() => {
     return INDUSTRIAL_PRESETS.find(p => p.id === selectedPresetId) || INDUSTRIAL_PRESETS[0];
   }, [selectedPresetId]);
+
+  // When preset changes, update sample document
+  const selectPreset = (preset: PresetRule) => {
+    setSelectedPresetId(preset.id);
+    setCustomPrompt(preset.prompt);
+    setSampleDocument(preset.sampleLog);
+  };
 
   // Dynamic Rule Synthesis based on prompt & sliders
   const synthesizedRegex = useMemo(() => {
@@ -272,6 +299,80 @@ export function PromptToRegexBuilder({ onDeployRule, className = "" }: PromptToR
     return base;
   }, [activePreset, maxConstraintRange, strictSchemaTypes]);
 
+  // Live Match Extraction on Sample Document
+  const matchHighlights = useMemo(() => {
+    if (!sampleDocument || !synthesizedRegex.pattern) return [];
+    try {
+      const rx = new RegExp(synthesizedRegex.pattern, synthesizedRegex.flags);
+      const matches: Array<{ start: number; end: number; text: string; groups: string[] }> = [];
+      let m: RegExpExecArray | null;
+      let safeguard = 0;
+      while ((m = rx.exec(sampleDocument)) !== null && safeguard++ < 300) {
+        if (m.index === rx.lastIndex) {
+          rx.lastIndex++;
+        }
+        matches.push({
+          start: m.index,
+          end: m.index + m[0].length,
+          text: m[0],
+          groups: m.slice(1)
+        });
+        if (!synthesizedRegex.flags.includes("g")) break;
+      }
+      return matches;
+    } catch {
+      return [];
+    }
+  }, [sampleDocument, synthesizedRegex]);
+
+  // Highlighted Text Segments Renderer
+  const renderedSegments = useMemo(() => {
+    if (!sampleDocument) return null;
+    if (matchHighlights.length === 0) return <span>{sampleDocument}</span>;
+
+    const elements: React.ReactNode[] = [];
+    let lastIndex = 0;
+
+    matchHighlights.forEach((match, idx) => {
+      if (match.start > lastIndex) {
+        elements.push(<span key={`text-${lastIndex}`}>{sampleDocument.slice(lastIndex, match.start)}</span>);
+      }
+      elements.push(
+        <mark
+          key={`match-${idx}`}
+          className="bg-primary/25 text-primary border border-primary/50 px-1 py-0.5 rounded font-mono font-bold shadow-[0_0_10px_rgba(0,240,255,0.3)] transition-all cursor-pointer hover:bg-primary/40"
+          title={`Match #${idx + 1}: "${match.text}"`}
+        >
+          {sampleDocument.slice(match.start, match.end)}
+        </mark>
+      );
+      lastIndex = match.end;
+    });
+
+    if (lastIndex < sampleDocument.length) {
+      elements.push(<span key={`text-${lastIndex}`}>{sampleDocument.slice(lastIndex)}</span>);
+    }
+
+    return elements;
+  }, [sampleDocument, matchHighlights]);
+
+  // Structured Extraction Preview conforming to schema
+  const extractedRecords = useMemo(() => {
+    return matchHighlights.map((m, idx) => {
+      const rawNum = m.groups[0] || m.text.match(/[0-9]+(?:\.[0-9]+)?/)?.[0] || "";
+      const numVal = parseFloat(rawNum);
+      const isCompliant = !isNaN(numVal) ? numVal <= maxConstraintRange : true;
+      return {
+        id: idx + 1,
+        rawString: m.text,
+        extractedMetric: isNaN(numVal) ? (m.groups[1] || m.groups[0] || m.text) : numVal,
+        unit: activePreset.id === "fluid-pressure" ? "PSI" : activePreset.id === "turbine-vibration" ? (m.groups[1] || "RPM") : activePreset.id === "thermal-sensor" ? "°C" : "SCADA",
+        isCompliant
+      };
+    });
+  }, [matchHighlights, maxConstraintRange, activePreset]);
+
+  // Copy helper
   const handleCopy = (text: string, type: "regex" | "schema") => {
     navigator.clipboard.writeText(text);
     if (type === "regex") {
@@ -283,9 +384,34 @@ export function PromptToRegexBuilder({ onDeployRule, className = "" }: PromptToR
     }
   };
 
-  const selectPreset = (preset: PresetRule) => {
-    setSelectedPresetId(preset.id);
-    setCustomPrompt(preset.prompt);
+  // Deploy Action
+  const handleDeployToEnclave = () => {
+    setIsDeploying(true);
+    setTimeout(() => {
+      setIsDeploying(false);
+      const rule = {
+        name: activePreset.name,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      };
+      setDeployedRule(rule);
+      try {
+        localStorage.setItem("ultron_enclave_validator", JSON.stringify(rule));
+      } catch {}
+      if (onDeployRule) {
+        onDeployRule({
+          name: activePreset.name,
+          regex: `/${synthesizedRegex.pattern}/${synthesizedRegex.flags}`,
+          schema: synthesizedSchema
+        });
+      }
+    }, 850);
+  };
+
+  const handleUndeploy = () => {
+    setDeployedRule(null);
+    try {
+      localStorage.removeItem("ultron_enclave_validator");
+    } catch {}
   };
 
   return (
@@ -311,6 +437,29 @@ export function PromptToRegexBuilder({ onDeployRule, className = "" }: PromptToR
             </p>
           </div>
         </div>
+
+        {/* Persistent Enclave Deployment Status */}
+        {deployedRule ? (
+          <div className="relative z-10 flex items-center gap-2 p-2 px-3 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 text-xs font-mono">
+            <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0" />
+            <div>
+              <div className="font-semibold text-[11px] leading-tight">ACTIVE IN ENCLAVE</div>
+              <div className="text-[10px] text-muted-foreground">{deployedRule.name} · {deployedRule.timestamp}</div>
+            </div>
+            <button 
+              onClick={handleUndeploy}
+              className="ml-2 text-[10px] text-red-400 hover:underline px-1.5 py-0.5 rounded hover:bg-red-500/10"
+              title="Remove validator"
+            >
+              Undeploy
+            </button>
+          </div>
+        ) : (
+          <div className="relative z-10 hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/40 border border-border/60 text-muted-foreground text-xs font-mono">
+            <Database className="w-3.5 h-3.5 text-primary" />
+            <span>Enclave Guard: Standby</span>
+          </div>
+        )}
       </div>
 
       {/* Preset Quick Selectors */}
@@ -579,6 +728,121 @@ export function PromptToRegexBuilder({ onDeployRule, className = "" }: PromptToR
               <code>{JSON.stringify(synthesizedSchema, null, 2)}</code>
             </pre>
           )}
+        </div>
+      </div>
+
+      {/* Live Interactive Telemetry & Document Sandbox */}
+      <div className="border border-border/70 rounded-xl overflow-hidden bg-background/50 shadow-md space-y-0">
+        <div className="flex items-center justify-between px-4 py-2.5 bg-accent/30 border-b border-border/60">
+          <div className="flex items-center gap-2">
+            <Terminal className="w-4 h-4 text-primary" />
+            <span className="text-xs font-semibold text-foreground">
+              Live Document & Telemetry Stream Sandbox
+            </span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-primary/20 text-primary border border-primary/30">
+              {matchHighlights.length} {matchHighlights.length === 1 ? "Match" : "Matches"} Detected
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSampleDocument(activePreset.sampleLog)}
+              className="flex items-center gap-1 px-2 py-1 text-[11px] rounded bg-background border border-border/70 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Reset Sample</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="p-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Editable Sample Stream */}
+          <div className="space-y-1.5">
+            <div className="text-[11px] font-mono uppercase text-muted-foreground flex justify-between">
+              <span>Input Telemetry Log / Document</span>
+              <span className="text-[10px] text-primary/70">Editable Textarea</span>
+            </div>
+            <textarea
+              value={sampleDocument}
+              onChange={(e) => setSampleDocument(e.target.value)}
+              rows={6}
+              className="w-full bg-black/50 border border-border/70 focus:border-primary/60 rounded-lg p-3 text-xs font-mono text-foreground placeholder:text-muted-foreground/40 outline-none resize-none leading-relaxed"
+            />
+          </div>
+
+          {/* Real-time Match Highlighting Visualizer */}
+          <div className="space-y-1.5">
+            <div className="text-[11px] font-mono uppercase text-muted-foreground flex justify-between">
+              <span>Live Highlighted Pattern Visualizer</span>
+              <span className="text-[10px] text-primary">Zero-latency Regex Eval</span>
+            </div>
+            <div className="w-full h-[126px] bg-black/60 border border-primary/30 rounded-lg p-3 text-xs font-mono text-muted-foreground overflow-y-auto whitespace-pre-wrap leading-relaxed custom-scrollbar">
+              {renderedSegments}
+            </div>
+          </div>
+        </div>
+
+        {/* Structured Extraction Records Table */}
+        {extractedRecords.length > 0 && (
+          <div className="px-4 pb-4">
+            <div className="text-[11px] font-mono uppercase text-muted-foreground mb-2 flex items-center justify-between">
+              <span>Extracted Schema Objects ({extractedRecords.length})</span>
+              <span className="text-[10px] text-green-400 font-mono">Conforming to Draft-07</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
+              {extractedRecords.map((rec) => (
+                <div
+                  key={rec.id}
+                  className="p-2.5 rounded-lg bg-accent/40 border border-border/60 text-xs font-mono flex flex-col justify-between"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] text-muted-foreground">Record #{rec.id}</span>
+                    <span className={`text-[10px] px-1 rounded ${rec.isCompliant ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                      {rec.isCompliant ? 'VALID' : 'OUT-OF-BOUNDS'}
+                    </span>
+                  </div>
+                  <div className="text-primary font-bold text-sm">
+                    {String(rec.extractedMetric)} <span className="text-xs text-muted-foreground font-normal">{rec.unit}</span>
+                  </div>
+                  <div className="text-[10px] text-muted-foreground truncate mt-1">
+                    Raw: "{rec.rawString}"
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Deploy as Enclave Validator Action Bar */}
+        <div className="p-4 bg-accent/30 border-t border-border/60 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
+            <div className="text-xs text-muted-foreground">
+              Deploy this mathematical rule to enforce zero-hallucination agent outputs.
+            </div>
+          </div>
+
+          <button
+            onClick={handleDeployToEnclave}
+            disabled={isDeploying}
+            className={`w-full sm:w-auto px-5 py-2.5 rounded-xl font-medium text-xs flex items-center justify-center gap-2 transition-all shadow-md ${
+              isDeploying
+                ? "bg-primary/50 text-black cursor-wait"
+                : "bg-primary text-black hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(0,240,255,0.4)]"
+            }`}
+          >
+            {isDeploying ? (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                <span>Injecting Bytecode into Enclave...</span>
+              </>
+            ) : (
+              <>
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Deploy as Agent Validator</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
     </div>

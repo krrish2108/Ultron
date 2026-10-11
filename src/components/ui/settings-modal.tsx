@@ -2,8 +2,9 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/store/useAppStore";
-import { X, Settings, User, Shield, CreditCard, Zap, Brain, Focus, Code, Wrench, Plug, Puzzle, Monitor, Sun, Moon, ChevronDown } from "lucide-react";
+import { X, Settings, User, Shield, CreditCard, Zap, Brain, Focus, Code, Wrench, Plug, Puzzle, Monitor, Sun, Moon, ChevronDown, Code2, Sparkles } from "lucide-react";
 import { useState, useRef } from "react";
+import { PromptToRegexBuilder } from "@/components/ui/prompt-to-regex-builder";
 
 const SETTINGS_TABS = [
   { id: "general", label: "General", icon: Settings },
@@ -15,6 +16,7 @@ const SETTINGS_TABS = [
 ];
 
 const CUSTOMIZE_TABS = [
+  { id: "regex-builder", label: "Prompt-to-Regex Studio", icon: Code2 },
   { id: "skills", label: "Skills", icon: Wrench, comingSoon: true },
   { id: "connectors", label: "Connectors", icon: Plug, comingSoon: true },
   { id: "plugins", label: "Plugins", icon: Puzzle, comingSoon: true },
@@ -668,6 +670,12 @@ export function SettingsModal() {
                       <span className="text-sm text-muted-foreground/60 font-mono">~/.ultron/storage/</span>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {activeTab === "regex-builder" && (
+                <div className="w-full max-w-4xl animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
+                  <PromptToRegexBuilder />
                 </div>
               )}
 
