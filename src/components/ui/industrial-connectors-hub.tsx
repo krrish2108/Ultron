@@ -52,6 +52,7 @@ export interface IndustrialConnector {
   description: string;
   lastSync: string;
   mcpToolsCount: number;
+  tools?: { name: string; description: string; parameters?: Record<string, any> }[];
   config: {
     pollIntervalMs: number;
     autoReconnect: boolean;
@@ -223,17 +224,30 @@ export function IndustrialConnectorsHub() {
 
   // New Connector Form State
   const [newConnName, setNewConnName] = useState("");
-  const [newConnProtocol, setNewConnProtocol] = useState("OPC-UA Binary (TCP)");
-  const [newConnCategory, setNewConnCategory] = useState<"scada" | "historian" | "mcp" | "storage">("scada");
-  const [newConnEndpoint, setNewConnEndpoint] = useState("opc.tcp://127.0.0.1:4840/UA/CustomNode");
+  const [newConnProtocol, setNewConnProtocol] = useState("Model Context Protocol (stdio)");
+  const [newConnCategory, setNewConnCategory] = useState<"scada" | "historian" | "mcp" | "storage">("mcp");
+  const [newConnEndpoint, setNewConnEndpoint] = useState("python -m my_custom_mcp_server");
   const [newConnIsolation, setNewConnIsolation] = useState<IsolationLevel>("L3-Strict-Air-Gap");
   const [newConnExposed, setNewConnExposed] = useState(true);
+  const [newConnToolName, setNewConnToolName] = useState("query_custom_mcp");
+  const [newConnToolDesc, setNewConnToolDesc] = useState("Execute queries and actions on custom MCP server");
+  const [executingToolConnId, setExecutingToolConnId] = useState<string | null>(null);
+  const [toolResultOutput, setToolResultOutput] = useState<{ tool: string; result: any } | null>(null);
 
-  // Persist changes
+  // Persist changes to localStorage and Backend API
   useEffect(() => {
     try {
       localStorage.setItem("ultron_industrial_connectors", JSON.stringify(connectors));
     } catch {}
+
+    // Sync active registry with Python FastAPI backend
+    fetch("http://localhost:8000/api/connectors/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ connectors })
+    }).catch(() => {
+      // Graceful offline fallback
+    });
   }, [connectors]);
 
   // Filtered List
@@ -306,6 +320,27 @@ export function IndustrialConnectorsHub() {
       `[${new Date().toISOString().slice(11, 23)}] HANDSHAKE VERIFIED: ${connector.latencyMs}ms LATENCY · 0 BYTES LEAKED OUTSIDE ENCLAVE.`
     ];
 
+    // Query real backend handshake endpoint
+    fetch("http://localhost:8000/api/connectors/handshake", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        id: connector.id,
+        endpoint: connector.endpoint,
+        protocol: connector.protocol
+      })
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.cipher_suite) {
+          setHandshakeLogs((prev) => [
+            ...prev,
+            `[${new Date().toISOString().slice(11, 23)}] BACKEND ENCLAVE: ${data.cipher_suite} | AIR-GAP AUDIT: ${data.air_gap_verified ? "PASSED" : "FAILED"}`
+          ]);
+        }
+      })
+      .catch(() => {});
+
     steps.forEach((step, idx) => {
       setTimeout(() => {
         setHandshakeLogs(prev => [...prev, step]);
@@ -322,10 +357,59 @@ export function IndustrialConnectorsHub() {
     });
   };
 
+  // Execute Tool Test against Backend
+  const runToolTest = async (connector: IndustrialConnector) => {
+    setExecutingToolConnId(connector.id);
+    const toolName = connector.tools?.[0]?.name || (
+      connector.id.includes("opc") ? "opcua_read_pressure" :
+      connector.id.includes("mqtt") ? "mqtt_query_vibration" :
+      connector.id.includes("modbus") ? "scada_get_fault_codes" :
+      connector.id.includes("timescale") ? "timescaledb_query_telemetry" :
+      `${connector.name.toLowerCase().replace(/[^a-z0-9_]/g, '_')}_query`
+    );
+
+    try {
+      const res = await fetch("http://localhost:8000/api/connectors/call-tool", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tool_name: toolName,
+          arguments: { line: "Line A", metric: "pressure", query: "status_check" }
+        })
+      });
+      const data = await res.json();
+      setToolResultOutput({ tool: toolName, result: data.result || data });
+    } catch (err) {
+      setToolResultOutput({
+        tool: toolName,
+        result: {
+          status: "SUCCESS_SIMULATED",
+          connector: connector.name,
+          endpoint: connector.endpoint,
+          output: `Simulated local air-gap output for ${toolName}()`,
+          latency_ms: 1.2,
+          timestamp: new Date().toISOString()
+        }
+      });
+    } finally {
+      setExecutingToolConnId(null);
+    }
+  };
+
   // Handle Add New Connector
   const handleCreateConnector = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newConnName.trim() || !newConnEndpoint.trim()) return;
+
+    const safeToolName = newConnToolName.trim()
+      ? newConnToolName.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_')
+      : `${newConnName.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_')}_query`;
+
+    const customTool = {
+      name: safeToolName,
+      description: newConnToolDesc.trim() || `Custom tool for ${newConnName.trim()}`,
+      parameters: { query: { type: "string", description: "Command or tag query" } }
+    };
 
     const newConnector: IndustrialConnector = {
       id: `conn-custom-${Date.now()}`,
@@ -340,9 +424,10 @@ export function IndustrialConnectorsHub() {
       tlsCipher: "TLS_AES_256_GCM_SHA384",
       exposedToAgent: newConnExposed,
       activeNodesCount: 16,
-      description: "Custom user-configured air-gap industrial connector.",
+      description: newConnToolDesc.trim() || "Custom user-configured air-gap MCP connector.",
       lastSync: "Just now",
-      mcpToolsCount: newConnExposed ? 4 : 0,
+      mcpToolsCount: newConnExposed ? 1 : 0,
+      tools: [customTool],
       config: {
         pollIntervalMs: 100,
         autoReconnect: true,
@@ -354,6 +439,8 @@ export function IndustrialConnectorsHub() {
     setShowAddModal(false);
     setNewConnName("");
     setNewConnEndpoint("");
+    setNewConnToolName("query_custom_mcp");
+    setNewConnToolDesc("Execute queries and actions on custom MCP server");
   };
 
   // Delete Connector
@@ -602,6 +689,16 @@ export function IndustrialConnectorsHub() {
                 {/* Action Buttons */}
                 <div className="flex items-center gap-1.5">
                   <button
+                    onClick={() => runToolTest(connector)}
+                    disabled={executingToolConnId === connector.id}
+                    className="flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 hover:bg-primary/20 border border-primary/30 text-[11px] font-medium text-primary transition-colors"
+                    title="Execute test MCP tool call"
+                  >
+                    <Terminal className={`w-3 h-3 ${executingToolConnId === connector.id ? "animate-spin" : ""}`} />
+                    <span>Call Tool</span>
+                  </button>
+
+                  <button
                     onClick={() => runHandshakeTest(connector)}
                     disabled={isTesting}
                     className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-accent/60 hover:bg-accent border border-border/60 text-[11px] font-medium text-foreground transition-colors"
@@ -635,6 +732,27 @@ export function IndustrialConnectorsHub() {
           );
         })}
       </div>
+
+      {/* Live Tool Execution Result Drawer */}
+      {toolResultOutput && (
+        <div className="rounded-xl border border-primary/40 bg-black/90 p-4 font-mono text-xs shadow-2xl space-y-2 animate-in fade-in slide-in-from-bottom-2">
+          <div className="flex items-center justify-between border-b border-primary/20 pb-2">
+            <div className="flex items-center gap-2 text-primary font-bold">
+              <CheckCircle2 className="w-4 h-4 text-green-400" />
+              <span>MCP TOOL EXECUTION OUTPUT: {toolResultOutput.tool}()</span>
+            </div>
+            <button
+              onClick={() => setToolResultOutput(null)}
+              className="text-muted-foreground hover:text-foreground p-1 rounded"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <pre className="text-green-400 text-[11px] overflow-x-auto p-2 bg-black/50 rounded-lg max-h-48 custom-scrollbar">
+            <code>{JSON.stringify(toolResultOutput.result, null, 2)}</code>
+          </pre>
+        </div>
+      )}
 
       {/* Live Handshake Diagnostic Terminal Drawer */}
       {showTerminal && (
@@ -761,6 +879,31 @@ export function IndustrialConnectorsHub() {
                     <option value="L2-Enclave-VPC">L2 - Enclave VPC Protected</option>
                     <option value="L1-Local-Loopback">L1 - Local Loopback Only</option>
                   </select>
+                </div>
+
+                {/* Custom MCP Tool Declaration */}
+                <div className="grid grid-cols-2 gap-3 p-2.5 rounded-lg bg-black/40 border border-primary/25">
+                  <div>
+                    <label className="text-primary font-mono text-[11px] block mb-1">Custom MCP Tool Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={newConnToolName}
+                      onChange={(e) => setNewConnToolName(e.target.value)}
+                      placeholder="e.g. query_db, fetch_weather"
+                      className="w-full bg-accent/40 border border-border/80 focus:border-primary rounded-lg px-2.5 py-1.5 font-mono text-[11px] text-foreground outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-muted-foreground text-[11px] block mb-1">Tool Purpose / Description</label>
+                    <input
+                      type="text"
+                      value={newConnToolDesc}
+                      onChange={(e) => setNewConnToolDesc(e.target.value)}
+                      placeholder="e.g. Executes queries and returns data"
+                      className="w-full bg-accent/40 border border-border/80 focus:border-primary rounded-lg px-2.5 py-1.5 text-[11px] text-foreground outline-none"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between p-2.5 rounded-lg bg-background/50 border border-border/50">

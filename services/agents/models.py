@@ -5,7 +5,7 @@ from pydantic import Field
 
 
 class AgentResponse(BaseModel):
-    agent: Literal["rag", "doc_gen", "chat"]
+    agent: Literal["rag", "doc_gen", "chat", "mcp_tool"]
     status: Literal["success", "error", "no_results"]
     content: str
     error: Optional[str] = None
