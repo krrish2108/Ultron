@@ -5,6 +5,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { X, Settings, User, Shield, CreditCard, Zap, Brain, Focus, Code, Wrench, Plug, Puzzle, Monitor, Sun, Moon, ChevronDown, Code2, Sparkles } from "lucide-react";
 import { useState, useRef } from "react";
 import { PromptToRegexBuilder } from "@/components/ui/prompt-to-regex-builder";
+import { IndustrialConnectorsHub } from "@/components/ui/industrial-connectors-hub";
 
 const SETTINGS_TABS = [
   { id: "general", label: "General", icon: Settings },
@@ -17,8 +18,8 @@ const SETTINGS_TABS = [
 
 const CUSTOMIZE_TABS = [
   { id: "regex-builder", label: "Prompt-to-Regex Studio", icon: Code2 },
+  { id: "connectors", label: "Industrial & MCP Hub", icon: Plug },
   { id: "skills", label: "Skills", icon: Wrench, comingSoon: true },
-  { id: "connectors", label: "Connectors", icon: Plug, comingSoon: true },
   { id: "plugins", label: "Plugins", icon: Puzzle, comingSoon: true },
 ];
 
@@ -679,7 +680,13 @@ export function SettingsModal() {
                 </div>
               )}
 
-              {["source", "skills", "connectors", "plugins"].includes(activeTab) && (
+              {activeTab === "connectors" && (
+                <div className="w-full max-w-4xl animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
+                  <IndustrialConnectorsHub />
+                </div>
+              )}
+
+              {["source", "skills", "plugins"].includes(activeTab) && (
                 <div className="max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-500">
                   <h3 className="text-base font-medium text-foreground mb-6 capitalize">{activeTab}</h3>
                   <div className="flex flex-col items-center justify-center h-48 bg-accent/50 rounded-xl border border-border border-dashed">
