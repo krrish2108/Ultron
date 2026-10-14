@@ -153,6 +153,7 @@ export function AgentGraph() {
         minZoom={0.2}
       >
         <Background color="#ffffff" gap={16} size={1} className="opacity-5" />
+        <Controls className="bg-card/90 border border-border text-foreground fill-foreground scale-90 origin-bottom-left" showInteractive={false} />
       </ReactFlow>
     </div>
   );
