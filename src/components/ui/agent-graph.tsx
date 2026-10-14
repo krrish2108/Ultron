@@ -17,15 +17,14 @@ import { Plus, Minus, Maximize2 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import dagre from 'dagre';
 
-const dagreGraph = new dagre.graphlib.Graph();
-dagreGraph.setDefaultEdgeLabel(() => ({}));
-
 const nodeWidth = 180;
 const nodeHeight = 80;
 
 const getLayoutedElements = (nodes: any[], edges: any[], direction = 'TB') => {
+  const dagreGraph = new dagre.graphlib.Graph();
+  dagreGraph.setDefaultEdgeLabel(() => ({}));
   const isHorizontal = direction === 'LR';
-  dagreGraph.setGraph({ rankdir: direction, nodesep: 50, ranksep: 100 });
+  dagreGraph.setGraph({ rankdir: direction, nodesep: 35, ranksep: 75 });
 
   nodes.forEach((node) => {
     dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
@@ -42,8 +41,7 @@ const getLayoutedElements = (nodes: any[], edges: any[], direction = 'TB') => {
     node.targetPosition = isHorizontal ? 'left' : 'top';
     node.sourcePosition = isHorizontal ? 'right' : 'bottom';
     
-    // We are shifting the dagre node position (anchor=center center) to the top left
-    // so it matches the React Flow node anchor point (top left).
+    // Shifting dagre node position (anchor=center center) to top left for React Flow anchor
     node.position = {
       x: nodeWithPosition.x - nodeWidth / 2,
       y: nodeWithPosition.y - nodeHeight / 2,
@@ -119,6 +117,7 @@ const DEFAULT_GRAPH_EDGES = [
 ];
 
 export function AgentGraph() {
+  const containerRef = React.useRef<HTMLDivElement>(null);
   const graphNodes = useAppStore(state => state.transparency.graphNodes);
   const graphEdges = useAppStore(state => state.transparency.graphEdges);
   
@@ -141,7 +140,7 @@ export function AgentGraph() {
   }, [graphNodes, graphEdges, setNodes, setEdges]);
 
   return (
-    <div className="w-full h-full bg-background/50 border border-border rounded-xl overflow-hidden relative">
+    <div ref={containerRef} className="w-full h-full bg-background/50 border border-border rounded-xl overflow-hidden relative">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -149,14 +148,72 @@ export function AgentGraph() {
         onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         fitView
+        fitViewOptions={{ padding: 0.15, maxZoom: 0.65, minZoom: 0.15 }}
         className="bg-transparent"
-        minZoom={0.2}
+        minZoom={0.15}
+        maxZoom={2.5}
       >
         <Background color="#ffffff" gap={16} size={1} className="opacity-5" />
         <CustomGraphControls />
+        <GraphAutoFitter containerRef={containerRef} />
       </ReactFlow>
     </div>
   );
+}
+
+function GraphAutoFitter({ containerRef }: { containerRef: React.RefObject<HTMLDivElement | null> }) {
+  const { fitView } = useReactFlow();
+
+  const handleFit = React.useCallback(() => {
+    fitView({
+      padding: 0.15,
+      maxZoom: 0.65,
+      duration: 250,
+    });
+  }, [fitView]);
+
+  // Stepped timers on mount to ensure Framer Motion drawer spring animation (350-450ms) has settled
+  React.useEffect(() => {
+    handleFit();
+    const t1 = setTimeout(handleFit, 100);
+    const t2 = setTimeout(handleFit, 250);
+    const t3 = setTimeout(handleFit, 450);
+    const t4 = setTimeout(handleFit, 650);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+    };
+  }, [handleFit]);
+
+  // Handle container resize (e.g. drawer open/close or fullscreen modal open)
+  React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+
+    let resizeTimer: NodeJS.Timeout;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.width > 50 && entry.contentRect.height > 50) {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(() => {
+            handleFit();
+          }, 80);
+        }
+      }
+    });
+
+    observer.observe(el);
+
+    return () => {
+      observer.disconnect();
+      clearTimeout(resizeTimer);
+    };
+  }, [containerRef, handleFit]);
+
+  return null;
 }
 
 function CustomGraphControls() {
@@ -164,23 +221,23 @@ function CustomGraphControls() {
   return (
     <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1 bg-[#0a0a0a]/90 backdrop-blur-md border border-white/10 rounded-lg p-1 shadow-lg">
       <button
-        onClick={() => zoomIn({ duration: 300 })}
+        onClick={() => zoomIn({ duration: 250 })}
         className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 text-white/70 hover:text-[#00f0ff] transition-colors cursor-pointer"
         title="Zoom In"
       >
         <Plus className="w-3.5 h-3.5" />
       </button>
       <button
-        onClick={() => zoomOut({ duration: 300 })}
+        onClick={() => zoomOut({ duration: 250 })}
         className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 text-white/70 hover:text-[#00f0ff] transition-colors cursor-pointer"
         title="Zoom Out"
       >
         <Minus className="w-3.5 h-3.5" />
       </button>
       <button
-        onClick={() => fitView({ duration: 300 })}
+        onClick={() => fitView({ padding: 0.15, maxZoom: 0.65, duration: 300 })}
         className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 text-white/70 hover:text-[#00f0ff] transition-colors cursor-pointer"
-        title="Fit View"
+        title="Fit Full Tree"
       >
         <Maximize2 className="w-3 h-3" />
       </button>
