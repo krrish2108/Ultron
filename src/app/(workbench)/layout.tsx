@@ -8,13 +8,14 @@ import Image from "next/image";
 import { 
   Plus, Search, FileText, 
   Settings, ChevronLeft, ChevronRight, Terminal, Network, ShieldCheck, Activity, BrainCircuit,
-  FolderOpen, Box, Code2, SlidersHorizontal, Pin, Trash2
+  FolderOpen, Box, Code2, SlidersHorizontal, Pin, Trash2, Clock
 } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { SettingsModal } from "@/components/ui/settings-modal";
 import { HardwareTelemetry } from "@/components/ui/hardware-telemetry";
 import { BottomTelemetryBar } from "@/components/ui/bottom-telemetry-bar";
 import { AgentGraph } from "@/components/ui/agent-graph";
+import { AgentTimeTravelDebugger } from "@/components/ui/agent-time-travel-debugger";
 
 export default function WorkbenchLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -25,7 +26,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
-  const [transparencyTab, setTransparencyTab] = useState<'terminal' | 'graph'>('graph');
+  const [transparencyTab, setTransparencyTab] = useState<'terminal' | 'graph' | 'replay'>('graph');
 
   const recentSessions = useAppStore(state => state.sessions);
   const setSettingsOpen = useAppStore(state => state.setSettingsOpen);
@@ -331,7 +332,7 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
         {rightOpen ? (
           <motion.aside 
             initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 340, opacity: 1 }}
+            animate={{ width: 380, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.4, type: "spring", stiffness: 300, damping: 30 }}
             className="h-full bg-card/80 backdrop-blur-2xl border-l border-border flex flex-col shrink-0 overflow-hidden relative z-10 shadow-sm"
@@ -349,20 +350,28 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
 
             <div className="flex-1 overflow-y-auto p-5 space-y-8 no-scrollbar flex flex-col">
               
-              <div className="flex items-center gap-2 bg-background p-1 rounded-lg border border-border">
-                <button 
-                  suppressHydrationWarning
-                  onClick={() => setTransparencyTab('terminal')}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${transparencyTab === 'terminal' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  Terminal
-                </button>
+              <div className="flex items-center gap-1.5 bg-background p-1 rounded-lg border border-border">
                 <button 
                   suppressHydrationWarning
                   onClick={() => setTransparencyTab('graph')}
                   className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${transparencyTab === 'graph' ? 'bg-[#00f0ff]/20 text-[#00f0ff]' : 'text-muted-foreground hover:text-foreground'}`}
                 >
                   Agent Tree
+                </button>
+                <button 
+                  suppressHydrationWarning
+                  onClick={() => setTransparencyTab('replay')}
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors flex items-center justify-center gap-1 ${transparencyTab === 'replay' ? 'bg-primary/25 text-primary shadow-sm font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Time-Travel</span>
+                </button>
+                <button 
+                  suppressHydrationWarning
+                  onClick={() => setTransparencyTab('terminal')}
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${transparencyTab === 'terminal' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                  Terminal
                 </button>
               </div>
 
@@ -414,12 +423,28 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
                     </div>
                   </div>
                 </>
+              ) : transparencyTab === 'replay' ? (
+                <div className="space-y-4 animate-in fade-in duration-300">
+                  <AgentTimeTravelDebugger />
+                  <div className="h-[240px] relative rounded-xl overflow-hidden border border-border">
+                    <AgentGraph />
+                  </div>
+                </div>
               ) : (
-                <div className="flex-1 flex flex-col min-h-[400px]">
-                  <h3 className="text-[10px] font-bold text-[#00f0ff] uppercase tracking-widest flex items-center gap-2 mb-3 shrink-0">
-                    <Network className="w-3.5 h-3.5" /> Execution Graph
-                  </h3>
-                  <div className="flex-1 relative">
+                <div className="flex-1 flex flex-col min-h-[420px] space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[10px] font-bold text-[#00f0ff] uppercase tracking-widest flex items-center gap-2 shrink-0">
+                      <Network className="w-3.5 h-3.5" /> Execution Graph
+                    </h3>
+                    <button
+                      onClick={() => setTransparencyTab('replay')}
+                      className="text-[10px] text-primary hover:underline font-mono flex items-center gap-1"
+                    >
+                      <Clock className="w-3 h-3" />
+                      <span>Scrubber Replay ↗</span>
+                    </button>
+                  </div>
+                  <div className="flex-1 relative min-h-[360px]">
                     <AgentGraph />
                   </div>
                 </div>
