@@ -129,7 +129,7 @@ export function HardwareTelemetry({ rightOpen = false }: { rightOpen?: boolean }
   const points = history.map((h, i) => `${getX(i, history.length)},${getY(isVram ? h.vram : isCpu ? h.cpu : h.ram)}`).join(" ");
   return (
     <div 
-      className={`absolute top-4 z-[70] flex transition-all duration-300 ${rightOpen ? 'right-[360px]' : 'right-[72px]'}`} 
+      className={`absolute top-4 z-[70] flex transition-all duration-300 ${rightOpen ? 'right-[400px]' : 'right-[72px]'}`} 
       ref={containerRef}
     >
       {/* Status Pill matching the design */}
