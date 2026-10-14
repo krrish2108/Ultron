@@ -3,17 +3,17 @@
 import React, { useMemo, useCallback } from 'react';
 import {
   ReactFlow,
-  MiniMap,
-  Controls,
   Background,
   useNodesState,
   useEdgesState,
+  useReactFlow,
   Node,
   Edge,
   Handle,
   Position
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { Plus, Minus, Maximize2 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import dagre from 'dagre';
 
@@ -153,8 +153,37 @@ export function AgentGraph() {
         minZoom={0.2}
       >
         <Background color="#ffffff" gap={16} size={1} className="opacity-5" />
-        <Controls className="bg-card/90 border border-border text-foreground fill-foreground scale-90 origin-bottom-left" showInteractive={false} />
+        <CustomGraphControls />
       </ReactFlow>
+    </div>
+  );
+}
+
+function CustomGraphControls() {
+  const { zoomIn, zoomOut, fitView } = useReactFlow();
+  return (
+    <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1 bg-[#0a0a0a]/90 backdrop-blur-md border border-white/10 rounded-lg p-1 shadow-lg">
+      <button
+        onClick={() => zoomIn({ duration: 300 })}
+        className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 text-white/70 hover:text-[#00f0ff] transition-colors cursor-pointer"
+        title="Zoom In"
+      >
+        <Plus className="w-3.5 h-3.5" />
+      </button>
+      <button
+        onClick={() => zoomOut({ duration: 300 })}
+        className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 text-white/70 hover:text-[#00f0ff] transition-colors cursor-pointer"
+        title="Zoom Out"
+      >
+        <Minus className="w-3.5 h-3.5" />
+      </button>
+      <button
+        onClick={() => fitView({ duration: 300 })}
+        className="w-6 h-6 flex items-center justify-center rounded hover:bg-white/10 text-white/70 hover:text-[#00f0ff] transition-colors cursor-pointer"
+        title="Fit View"
+      >
+        <Maximize2 className="w-3 h-3" />
+      </button>
     </div>
   );
 }
