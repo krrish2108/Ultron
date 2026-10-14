@@ -8,7 +8,7 @@ import Image from "next/image";
 import { 
   Plus, Search, FileText, 
   Settings, ChevronLeft, ChevronRight, Terminal, Network, ShieldCheck, Activity, BrainCircuit,
-  FolderOpen, Box, Code2, SlidersHorizontal, Pin, Trash2, Clock
+  FolderOpen, Box, Code2, SlidersHorizontal, Pin, Trash2, Clock, Maximize2, Minimize2, X
 } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 import { SettingsModal } from "@/components/ui/settings-modal";
@@ -27,6 +27,17 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
   const [transparencyTab, setTransparencyTab] = useState<'terminal' | 'graph' | 'replay'>('graph');
+  const [isPanelMaximized, setIsPanelMaximized] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isPanelMaximized) {
+        setIsPanelMaximized(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isPanelMaximized]);
 
   const recentSessions = useAppStore(state => state.sessions);
   const setSettingsOpen = useAppStore(state => state.setSettingsOpen);
@@ -330,140 +341,429 @@ export default function WorkbenchLayout({ children }: { children: React.ReactNod
       {/* RIGHT TRANSPARENCY PANEL */}
       <AnimatePresence initial={false}>
         {rightOpen ? (
-          <motion.aside 
-            initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 380, opacity: 1 }}
-            exit={{ width: 0, opacity: 0 }}
-            transition={{ duration: 0.4, type: "spring", stiffness: 300, damping: 30 }}
-            className="h-full bg-card/80 backdrop-blur-2xl border-l border-border flex flex-col shrink-0 overflow-hidden relative z-10 shadow-sm"
-          >
-            {/* Header */}
-            <div className="p-5 flex items-center justify-between border-b border-border/50 bg-background/50">
-              <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-primary" />
-                <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">System Transparency</span>
-              </div>
-              <button suppressHydrationWarning onClick={() => setRightOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors">
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
+          isPanelMaximized ? (
+            /* FULLSCREEN STUDIO OVERLAY */
+            <motion.aside 
+              initial={{ opacity: 0, scale: 0.99 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.99 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="fixed inset-0 z-[85] bg-[#070b14]/98 backdrop-blur-3xl flex flex-col overflow-hidden shadow-2xl text-foreground font-sans"
+            >
+              {/* Studio Header Bar */}
+              <div className="p-4 px-6 flex items-center justify-between border-b border-border/60 bg-background/60 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#00f0ff]/10 border border-[#00f0ff]/30 flex items-center justify-center text-[#00f0ff] shadow-[0_0_15px_rgba(0,240,255,0.25)]">
+                    <Activity className="w-4 h-4 animate-pulse" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2.5">
+                      <h2 className="text-sm font-extrabold uppercase tracking-widest text-foreground font-mono">
+                        System Transparency & Time-Travel Studio
+                      </h2>
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-[#00f0ff]/15 text-[#00f0ff] border border-[#00f0ff]/30 uppercase tracking-wider shadow-[0_0_8px_rgba(0,240,255,0.2)]">
+                        Fullscreen Mode
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground hidden sm:block">
+                      Multi-agent execution topology, millisecond-accurate state snapshots, and air-gapped terminal trace
+                    </p>
+                  </div>
+                </div>
 
-            <div className="flex-1 overflow-y-auto p-5 space-y-8 no-scrollbar flex flex-col">
-              
-              <div className="flex items-center gap-1.5 bg-background p-1 rounded-lg border border-border">
-                <button 
-                  suppressHydrationWarning
-                  onClick={() => setTransparencyTab('graph')}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${transparencyTab === 'graph' ? 'bg-[#00f0ff]/20 text-[#00f0ff]' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  Agent Tree
-                </button>
-                <button 
-                  suppressHydrationWarning
-                  onClick={() => setTransparencyTab('replay')}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors flex items-center justify-center gap-1 ${transparencyTab === 'replay' ? 'bg-primary/25 text-primary shadow-sm font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>Time-Travel</span>
-                </button>
-                <button 
-                  suppressHydrationWarning
-                  onClick={() => setTransparencyTab('terminal')}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${transparencyTab === 'terminal' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  Terminal
-                </button>
-              </div>
-
-              {transparencyTab === 'terminal' ? (
-                <>
-                  {/* Agent Trace */}
-                  <div className="space-y-3">
-                    <h3 className="text-[10px] font-bold text-primary uppercase tracking-widest flex items-center gap-2">
-                      <Terminal className="w-3.5 h-3.5" /> Agent Trace
-                    </h3>
-                    <div className="bg-background border border-border rounded-xl p-4 font-mono text-[10px] leading-relaxed text-muted-foreground h-48 overflow-y-auto no-scrollbar shadow-inner relative">
-                      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_0%,var(--color-primary)_50%,transparent_100%)] bg-[length:100%_4px] animate-[scan_2s_linear_infinite] pointer-events-none opacity-20" />
-                      {terminalLogs.map((log, idx) => {
-                        let colorClass = "text-muted-foreground";
-                        if (log.includes("[PLAN]")) colorClass = "text-primary";
-                        if (log.includes("Intent classified")) colorClass = "text-emerald-500";
-                        if (log.includes("[ACT]")) colorClass = "text-blue-500";
-                        if (log.includes("[OBSERVE]")) colorClass = "text-amber-500";
-                        return <motion.div initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} key={idx} className={colorClass}>{log}</motion.div>;
-                      })}
-                      <div className="text-primary mt-2 animate-pulse">_</div>
+                <div className="flex items-center gap-3">
+                  <div className="hidden lg:flex items-center gap-3 px-3 py-1.5 rounded-lg bg-card/60 border border-border/50 text-[11px] font-mono">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+                      <span className="text-muted-foreground">Enclave:</span>
+                      <span className="text-emerald-400 font-bold">AIR-GAPPED</span>
+                    </div>
+                    <span className="text-muted-foreground/40">|</span>
+                    <div>
+                      <span className="text-muted-foreground">Zero-Egress:</span>{" "}
+                      <span className="text-foreground font-bold">0 B</span>
                     </div>
                   </div>
 
-                  {/* Routing Decision */}
-                  <div className="space-y-3">
-                    <h3 className="text-[10px] font-bold text-blue-500 uppercase tracking-widest flex items-center gap-2">
-                      <BrainCircuit className="w-3.5 h-3.5" /> Auto-Routing Logic
-                    </h3>
-                    <div className="bg-accent/50 border border-border rounded-xl p-4 space-y-3 hover:border-border/80 hover:bg-accent transition-all">
-                      {routingLogic ? (
-                        <>
-                          <div className="flex justify-between items-center pb-2 border-b border-border/50">
-                            <span className="text-[10px] text-muted-foreground">TASK</span>
-                            <span className="text-[10px] font-bold text-foreground">{routingLogic.taskType}</span>
-                          </div>
-                          <div className="flex justify-between items-center pb-2 border-b border-border/50">
-                            <span className="text-[10px] text-muted-foreground">MODEL</span>
-                            <span className="text-[10px] font-bold text-blue-400">{routingLogic.selectedModel}</span>
-                          </div>
-                          <div>
-                            <span className="text-[10px] text-muted-foreground block mb-1">REASONING</span>
-                            <span className="text-[10px] text-foreground/80 leading-relaxed">{routingLogic.reasoning}</span>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-[10px] text-muted-foreground text-center py-4">Awaiting task input...</div>
-                      )}
+                  <span className="hidden md:inline-flex items-center text-[10px] font-mono text-muted-foreground">
+                    Press <kbd className="px-1.5 py-0.5 mx-1 rounded bg-accent border border-border text-foreground font-mono text-[9px]">Esc</kbd> to minimize
+                  </span>
+
+                  {/* Minimize Back Button */}
+                  <button
+                    suppressHydrationWarning
+                    onClick={() => setIsPanelMaximized(false)}
+                    className="px-3.5 py-1.5 rounded-lg bg-[#00f0ff]/15 hover:bg-[#00f0ff]/25 text-[#00f0ff] border border-[#00f0ff]/40 transition-all flex items-center gap-2 text-xs font-semibold shadow-[0_0_15px_rgba(0,240,255,0.2)] cursor-pointer"
+                    title="Minimize back to docked sidebar (Esc)"
+                  >
+                    <Minimize2 className="w-3.5 h-3.5" />
+                    <span>Minimize back</span>
+                  </button>
+
+                  {/* Close Fullscreen Panel */}
+                  <button
+                    suppressHydrationWarning
+                    onClick={() => {
+                      setIsPanelMaximized(false);
+                      setRightOpen(false);
+                    }}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                    title="Close transparency studio"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Studio Sub-Header Tabs */}
+              <div className="px-6 py-2.5 bg-background/30 border-b border-border/40 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2 bg-card/60 p-1 rounded-lg border border-border/60">
+                  <button 
+                    suppressHydrationWarning
+                    onClick={() => setTransparencyTab('graph')}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-1.5 ${
+                      transparencyTab === 'graph' 
+                        ? 'bg-[#00f0ff]/20 text-[#00f0ff] shadow-[0_0_10px_rgba(0,240,255,0.2)] font-semibold' 
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Network className="w-3.5 h-3.5" />
+                    <span>Agent Tree & Graph</span>
+                  </button>
+                  <button 
+                    suppressHydrationWarning
+                    onClick={() => setTransparencyTab('replay')}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-1.5 ${
+                      transparencyTab === 'replay' 
+                        ? 'bg-[#00f0ff]/20 text-[#00f0ff] shadow-[0_0_10px_rgba(0,240,255,0.2)] font-semibold' 
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Time-Travel Replay & State Debugger</span>
+                  </button>
+                  <button 
+                    suppressHydrationWarning
+                    onClick={() => setTransparencyTab('terminal')}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all flex items-center gap-1.5 ${
+                      transparencyTab === 'terminal' 
+                        ? 'bg-[#00f0ff]/20 text-[#00f0ff] shadow-[0_0_10px_rgba(0,240,255,0.2)] font-semibold' 
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    <Terminal className="w-3.5 h-3.5" />
+                    <span>Terminal & Trace Console</span>
+                  </button>
+                </div>
+
+                <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-muted-foreground">
+                  <span className="w-2 h-2 rounded-full bg-[#00f0ff] animate-ping" />
+                  <span>Synchronized Multi-Agent Flow</span>
+                </div>
+              </div>
+
+              {/* Studio Body Content */}
+              {transparencyTab === 'replay' ? (
+                <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+                  {/* Left Column: Debugger Scrubber, Scenario Switcher, Snapshot Memory */}
+                  <div className="w-full md:w-[480px] lg:w-[520px] shrink-0 border-r border-border/50 p-6 overflow-y-auto space-y-5 bg-card/25 custom-scrollbar">
+                    <AgentTimeTravelDebugger 
+                      isFullscreen={true}
+                      onToggleFullscreen={() => setIsPanelMaximized(false)}
+                    />
+                  </div>
+
+                  {/* Right Column: Expansive Multi-Agent Topology Canvas */}
+                  <div className="flex-1 h-full p-6 flex flex-col bg-background/50 relative overflow-hidden">
+                    <div className="flex items-center justify-between pb-3 border-b border-border/40 shrink-0 mb-3">
+                      <div className="flex items-center gap-2">
+                        <Network className="w-4 h-4 text-[#00f0ff]" />
+                        <span className="text-xs font-bold tracking-widest text-[#00f0ff] uppercase font-mono">
+                          Multi-Agent Execution Graph Topology
+                        </span>
+                        <span className="text-[10px] text-muted-foreground font-mono">
+                          (Interactive Pan & Zoom Enabled)
+                        </span>
+                      </div>
+                      <div className="text-[11px] font-mono text-muted-foreground flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#00f0ff] shadow-[0_0_8px_rgba(0,240,255,0.8)]" />
+                        <span>Active Illuminated Node Synchronized to Replay Slider</span>
+                      </div>
+                    </div>
+                    <div className="flex-1 w-full h-full relative rounded-2xl overflow-hidden border border-border/60 bg-black/40 shadow-inner">
+                      <AgentGraph />
                     </div>
                   </div>
-                </>
-              ) : transparencyTab === 'replay' ? (
-                <div className="space-y-4 animate-in fade-in duration-300">
-                  <AgentTimeTravelDebugger />
-                  <div className="h-[240px] relative rounded-xl overflow-hidden border border-border">
+                </div>
+              ) : transparencyTab === 'graph' ? (
+                <div className="flex-1 p-6 flex flex-col h-full bg-background/50 relative overflow-hidden">
+                  <div className="flex items-center justify-between pb-3 border-b border-border/40 shrink-0 mb-3">
+                    <div className="flex items-center gap-2">
+                      <Network className="w-4 h-4 text-[#00f0ff]" />
+                      <span className="text-xs font-bold tracking-widest text-[#00f0ff] uppercase font-mono">
+                        Enclave Agent Orchestration Topology
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        (Supervisor, Validator Studio, Siemens S7 Gateway, Auditor)
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setTransparencyTab('replay')}
+                      className="text-xs text-primary hover:underline font-mono flex items-center gap-1.5 px-3 py-1 rounded-md bg-primary/10 border border-primary/20"
+                    >
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Switch to Time-Travel Replay ↗</span>
+                    </button>
+                  </div>
+                  <div className="flex-1 w-full h-full relative rounded-2xl overflow-hidden border border-border/60 bg-black/40 shadow-inner">
                     <AgentGraph />
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 flex flex-col min-h-[420px] space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-[10px] font-bold text-[#00f0ff] uppercase tracking-widest flex items-center gap-2 shrink-0">
-                      <Network className="w-3.5 h-3.5" /> Execution Graph
-                    </h3>
-                    <button
-                      onClick={() => setTransparencyTab('replay')}
-                      className="text-[10px] text-primary hover:underline font-mono flex items-center gap-1"
-                    >
-                      <Clock className="w-3 h-3" />
-                      <span>Scrubber Replay ↗</span>
-                    </button>
+                /* Fullscreen Terminal View */
+                <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+                  <div className="flex-1 p-6 flex flex-col h-full bg-background/50 overflow-hidden">
+                    <div className="flex items-center justify-between pb-3 border-b border-border/40 shrink-0 mb-3">
+                      <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider font-mono">
+                        <Terminal className="w-4 h-4" />
+                        <span>Air-Gapped Agent Kernel Trace</span>
+                      </div>
+                      <div className="text-[10px] font-mono text-muted-foreground flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span>Live Stream</span>
+                      </div>
+                    </div>
+                    <div className="flex-1 bg-background/80 border border-border rounded-2xl p-5 font-mono text-xs leading-relaxed text-muted-foreground overflow-y-auto no-scrollbar shadow-inner relative">
+                      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_0%,var(--color-primary)_50%,transparent_100%)] bg-[length:100%_4px] animate-[scan_2s_linear_infinite] pointer-events-none opacity-20" />
+                      {terminalLogs.map((log, idx) => {
+                        let colorClass = "text-muted-foreground";
+                        if (log.includes("[PLAN]")) colorClass = "text-primary font-semibold";
+                        if (log.includes("Intent classified")) colorClass = "text-emerald-400 font-semibold";
+                        if (log.includes("[ACT]")) colorClass = "text-blue-400";
+                        if (log.includes("[OBSERVE]")) colorClass = "text-amber-400";
+                        return (
+                          <motion.div initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} key={idx} className={`${colorClass} py-0.5`}>
+                            {log}
+                          </motion.div>
+                        );
+                      })}
+                      <div className="text-primary mt-3 animate-pulse text-sm">_</div>
+                    </div>
                   </div>
-                  <div className="flex-1 relative min-h-[360px]">
-                    <AgentGraph />
+
+                  <div className="w-full md:w-[420px] shrink-0 border-l border-border/50 p-6 overflow-y-auto space-y-6 bg-card/25">
+                    <div className="space-y-3">
+                      <h3 className="text-xs font-bold text-blue-400 uppercase tracking-widest flex items-center gap-2 font-mono">
+                        <BrainCircuit className="w-4 h-4" /> Auto-Routing Logic Matrix
+                      </h3>
+                      <div className="bg-background/80 border border-border rounded-2xl p-5 space-y-4">
+                        {routingLogic ? (
+                          <>
+                            <div className="flex justify-between items-center pb-3 border-b border-border/50">
+                              <span className="text-xs text-muted-foreground">TASK TYPE</span>
+                              <span className="text-xs font-mono font-bold text-foreground bg-accent/60 px-2 py-0.5 rounded border border-border/50">{routingLogic.taskType}</span>
+                            </div>
+                            <div className="flex justify-between items-center pb-3 border-b border-border/50">
+                              <span className="text-xs text-muted-foreground">DEPLOYED MODEL</span>
+                              <span className="text-xs font-mono font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/30">{routingLogic.selectedModel}</span>
+                            </div>
+                            <div>
+                              <span className="text-xs text-muted-foreground block mb-2 font-mono">REASONING TRACE</span>
+                              <p className="text-xs text-foreground/80 leading-relaxed font-mono bg-accent/30 p-3 rounded-lg border border-border/40">
+                                {routingLogic.reasoning}
+                              </p>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-xs text-muted-foreground text-center py-6 font-mono">Awaiting task input...</div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-2 font-mono">
+                        <Network className="w-4 h-4" /> Air-Gapped Network Enclave
+                      </h3>
+                      <div className="bg-background/80 border border-border rounded-2xl p-5 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="text-4xl font-extrabold text-emerald-400 font-mono tracking-tighter drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]">0</div>
+                            <div className="text-xs text-emerald-400/80 uppercase tracking-wider font-bold mt-1">Outbound Connections</div>
+                          </div>
+                          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                            <ShieldCheck className="w-8 h-8" />
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">
+                          Physical egress is blocked at the microkernel virtual switch. All agent IPC flows through internal loopback gateways.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
+            </motion.aside>
+          ) : (
+            /* DOCKED SIDEBAR (380px) */
+            <motion.aside 
+              initial={{ width: 0, opacity: 0 }}
+              animate={{ width: 380, opacity: 1 }}
+              exit={{ width: 0, opacity: 0 }}
+              transition={{ duration: 0.4, type: "spring", stiffness: 300, damping: 30 }}
+              className="h-full bg-card/80 backdrop-blur-2xl border-l border-border flex flex-col shrink-0 overflow-hidden relative z-10 shadow-sm"
+            >
+              {/* Header */}
+              <div className="p-5 flex items-center justify-between border-b border-border/50 bg-background/50">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-primary" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">System Transparency</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {/* Full Screen Option */}
+                  <button 
+                    suppressHydrationWarning 
+                    onClick={() => setIsPanelMaximized(true)} 
+                    className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-[#00f0ff] border border-transparent hover:border-[#00f0ff]/30 transition-all flex items-center gap-1 text-xs font-medium cursor-pointer"
+                    title="Expand to Fullscreen Studio"
+                  >
+                    <Maximize2 className="w-4 h-4" />
+                    <span className="text-[10px] hidden sm:inline font-mono">Full Screen</span>
+                  </button>
+                  <button suppressHydrationWarning onClick={() => setRightOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg">
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
 
+              <div className="flex-1 overflow-y-auto p-5 space-y-8 no-scrollbar flex flex-col">
+                
+                <div className="flex items-center gap-1.5 bg-background p-1 rounded-lg border border-border">
+                  <button 
+                    suppressHydrationWarning
+                    onClick={() => setTransparencyTab('graph')}
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${transparencyTab === 'graph' ? 'bg-[#00f0ff]/20 text-[#00f0ff]' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    Agent Tree
+                  </button>
+                  <button 
+                    suppressHydrationWarning
+                    onClick={() => setTransparencyTab('replay')}
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors flex items-center justify-center gap-1 ${transparencyTab === 'replay' ? 'bg-primary/25 text-primary shadow-sm font-semibold' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Time-Travel</span>
+                  </button>
+                  <button 
+                    suppressHydrationWarning
+                    onClick={() => setTransparencyTab('terminal')}
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${transparencyTab === 'terminal' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    Terminal
+                  </button>
+                </div>
 
-              {/* Network Status */}
-              <div className="space-y-3">
-                <h3 className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest flex items-center gap-2">
-                  <Network className="w-3.5 h-3.5" /> Live Network
-                </h3>
+                {transparencyTab === 'terminal' ? (
+                  <>
+                    {/* Agent Trace */}
+                    <div className="space-y-3">
+                      <h3 className="text-[10px] font-bold text-primary uppercase tracking-widest flex items-center gap-2">
+                        <Terminal className="w-3.5 h-3.5" /> Agent Trace
+                      </h3>
+                      <div className="bg-background border border-border rounded-xl p-4 font-mono text-[10px] leading-relaxed text-muted-foreground h-48 overflow-y-auto no-scrollbar shadow-inner relative">
+                        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_0%,var(--color-primary)_50%,transparent_100%)] bg-[length:100%_4px] animate-[scan_2s_linear_infinite] pointer-events-none opacity-20" />
+                        {terminalLogs.map((log, idx) => {
+                          let colorClass = "text-muted-foreground";
+                          if (log.includes("[PLAN]")) colorClass = "text-primary";
+                          if (log.includes("Intent classified")) colorClass = "text-emerald-500";
+                          if (log.includes("[ACT]")) colorClass = "text-blue-500";
+                          if (log.includes("[OBSERVE]")) colorClass = "text-amber-500";
+                          return <motion.div initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} key={idx} className={colorClass}>{log}</motion.div>;
+                        })}
+                        <div className="text-primary mt-2 animate-pulse">_</div>
+                      </div>
+                    </div>
+
+                    {/* Routing Decision */}
+                    <div className="space-y-3">
+                      <h3 className="text-[10px] font-bold text-blue-500 uppercase tracking-widest flex items-center gap-2">
+                        <BrainCircuit className="w-3.5 h-3.5" /> Auto-Routing Logic
+                      </h3>
+                      <div className="bg-accent/50 border border-border rounded-xl p-4 space-y-3 hover:border-border/80 hover:bg-accent transition-all">
+                        {routingLogic ? (
+                          <>
+                            <div className="flex justify-between items-center pb-2 border-b border-border/50">
+                              <span className="text-[10px] text-muted-foreground">TASK</span>
+                              <span className="text-[10px] font-bold text-foreground">{routingLogic.taskType}</span>
+                            </div>
+                            <div className="flex justify-between items-center pb-2 border-b border-border/50">
+                              <span className="text-[10px] text-muted-foreground">MODEL</span>
+                              <span className="text-[10px] font-bold text-blue-400">{routingLogic.selectedModel}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-muted-foreground block mb-1">REASONING</span>
+                              <span className="text-[10px] text-foreground/80 leading-relaxed">{routingLogic.reasoning}</span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-[10px] text-muted-foreground text-center py-4">Awaiting task input...</div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                ) : transparencyTab === 'replay' ? (
+                  <div className="space-y-4 animate-in fade-in duration-300">
+                    <AgentTimeTravelDebugger 
+                      isFullscreen={false}
+                      onToggleFullscreen={() => setIsPanelMaximized(true)}
+                    />
+                    <div className="h-[240px] relative rounded-xl overflow-hidden border border-border">
+                      <AgentGraph />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex flex-col min-h-[420px] space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-[10px] font-bold text-[#00f0ff] uppercase tracking-widest flex items-center gap-2 shrink-0">
+                        <Network className="w-3.5 h-3.5" /> Execution Graph
+                      </h3>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setIsPanelMaximized(true)}
+                          className="text-[10px] text-muted-foreground hover:text-[#00f0ff] font-mono flex items-center gap-1 transition-colors"
+                          title="View graph in full screen"
+                        >
+                          <Maximize2 className="w-3 h-3" />
+                          <span>Full Screen</span>
+                        </button>
+                        <button
+                          onClick={() => setTransparencyTab('replay')}
+                          className="text-[10px] text-primary hover:underline font-mono flex items-center gap-1"
+                        >
+                          <Clock className="w-3 h-3" />
+                          <span>Scrubber Replay ↗</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex-1 relative min-h-[360px]">
+                      <AgentGraph />
+                    </div>
+                  </div>
+                )}
+
+                {/* Network Status */}
+                <div className="space-y-3">
+                  <h3 className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest flex items-center gap-2">
+                    <Network className="w-3.5 h-3.5" /> Live Network
+                  </h3>
                   <div className="relative z-10">
                     <div className="text-3xl font-extrabold text-emerald-400 font-mono tracking-tighter drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]">0</div>
                     <div className="text-[10px] text-emerald-400/80 uppercase tracking-wider font-bold mt-1">Outbound Conn.</div>
                   </div>
                 </div>
 
-            </div>
-          </motion.aside>
+              </div>
+            </motion.aside>
+          )
         ) : (
           <div className="absolute top-4 right-4 z-50">
             <button suppressHydrationWarning onClick={() => setRightOpen(true)} className="w-10 h-10 rounded-xl bg-black/50 backdrop-blur-md border border-white/20 flex items-center justify-center text-white/60 hover:text-[#00f0ff] hover:border-[#00f0ff] transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)] hover:shadow-[0_0_20px_rgba(0,240,255,0.3)] group">

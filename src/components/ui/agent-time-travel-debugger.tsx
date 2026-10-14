@@ -20,7 +20,8 @@ import {
   AlertTriangle, 
   Sparkles,
   Sliders,
-  Maximize2
+  Maximize2,
+  Minimize2
 } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
 
@@ -249,15 +250,33 @@ export const REPLAY_SCENARIOS: ReplayScenario[] = [
 export interface AgentTimeTravelDebuggerProps {
   onStepChange?: (step: ReplayStep) => void;
   className?: string;
+  isFullscreen?: boolean;
+  onToggleFullscreen?: () => void;
 }
 
-export function AgentTimeTravelDebugger({ onStepChange, className = "" }: AgentTimeTravelDebuggerProps) {
-  const [selectedScenarioId, setSelectedScenarioId] = useState<string>("telemetry-anomaly");
-  const [currentStepIndex, setCurrentStepIndex] = useState<number>(3); // Default to final completed state
+let persistedScenarioId = "telemetry-anomaly";
+let persistedStepIndex = 3;
+
+export function AgentTimeTravelDebugger({ 
+  onStepChange, 
+  className = "",
+  isFullscreen = false,
+  onToggleFullscreen
+}: AgentTimeTravelDebuggerProps) {
+  const [selectedScenarioId, setSelectedScenarioId] = useState<string>(() => persistedScenarioId);
+  const [currentStepIndex, setCurrentStepIndex] = useState<number>(() => persistedStepIndex);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
   const [isLiveMode, setIsLiveMode] = useState<boolean>(true);
   const playTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    persistedScenarioId = selectedScenarioId;
+  }, [selectedScenarioId]);
+
+  useEffect(() => {
+    persistedStepIndex = currentStepIndex;
+  }, [currentStepIndex]);
 
   // Active scenario
   const activeScenario = useMemo(() => {
@@ -368,14 +387,31 @@ export function AgentTimeTravelDebugger({ onStepChange, className = "" }: AgentT
             </span>
           </div>
 
-          {!isLiveMode && (
-            <button
-              onClick={handleReturnToLive}
-              className="text-[10px] text-primary hover:underline font-mono"
-            >
-              Return to Live ↗
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {!isLiveMode && (
+              <button
+                onClick={handleReturnToLive}
+                className="text-[10px] text-primary hover:underline font-mono"
+              >
+                Return to Live ↗
+              </button>
+            )}
+
+            {onToggleFullscreen && (
+              <button
+                onClick={onToggleFullscreen}
+                className={`px-2 py-0.5 rounded-md border transition-all flex items-center gap-1.5 text-[10px] font-mono cursor-pointer ${
+                  isFullscreen 
+                    ? "bg-[#00f0ff]/15 border-[#00f0ff]/40 text-[#00f0ff] hover:bg-[#00f0ff]/25 shadow-[0_0_8px_rgba(0,240,255,0.2)]" 
+                    : "bg-accent/40 border-border/60 text-muted-foreground hover:text-foreground hover:border-[#00f0ff]/40"
+                }`}
+                title={isFullscreen ? "Minimize back to sidebar (Esc)" : "Expand to Fullscreen Studio"}
+              >
+                {isFullscreen ? <Minimize2 className="w-3 h-3 text-[#00f0ff]" /> : <Maximize2 className="w-3 h-3 text-muted-foreground" />}
+                <span className="hidden sm:inline font-semibold">{isFullscreen ? "Minimize" : "Full Screen"}</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Scenario Selector Dropdown */}
@@ -523,10 +559,24 @@ export function AgentTimeTravelDebugger({ onStepChange, className = "" }: AgentT
         {/* Registers / Variables JSON */}
         <div className="space-y-1">
           <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50 block">State Variables & Registers:</span>
-          <pre className="p-2 rounded bg-black/70 border border-border/50 text-[10px] text-green-400 overflow-x-auto max-h-28 leading-relaxed custom-scrollbar">
+          <pre className={`p-2 rounded bg-black/70 border border-border/50 text-[10px] text-green-400 overflow-x-auto ${isFullscreen ? "max-h-56" : "max-h-28"} leading-relaxed custom-scrollbar`}>
             <code>{JSON.stringify(currentStep.memorySnapshot.registersOrPayload, null, 2)}</code>
           </pre>
         </div>
+
+        {/* Step Trace Snippet */}
+        {currentStep.terminalSnippet && currentStep.terminalSnippet.length > 0 && (
+          <div className="space-y-1 pt-2 border-t border-border/40">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60 flex items-center gap-1 font-mono font-bold">
+              <Terminal className="w-3 h-3 text-primary" /> Step Trace Log:
+            </span>
+            <div className={`p-2 rounded bg-black/80 border border-border/50 text-[10px] font-mono text-cyan-300/90 space-y-0.5 leading-relaxed overflow-x-auto ${isFullscreen ? "max-h-40" : "max-h-24"} custom-scrollbar`}>
+              {currentStep.terminalSnippet.map((line, li) => (
+                <div key={li}>{line}</div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
