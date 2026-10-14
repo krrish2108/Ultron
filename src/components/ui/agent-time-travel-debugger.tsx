@@ -424,10 +424,13 @@ export function AgentTimeTravelDebugger({
               setCurrentStepIndex(3);
               setIsLiveMode(true);
             }}
-            className="w-full bg-accent/40 border border-border/80 focus:border-primary rounded-lg px-2 py-1 text-xs text-foreground outline-none font-mono"
+            style={{ colorScheme: "dark" }}
+            className="w-full bg-[#0d1527] border border-border/80 focus:border-primary rounded-lg px-2 py-1 text-xs text-foreground outline-none font-mono cursor-pointer"
           >
             {REPLAY_SCENARIOS.map(sc => (
-              <option key={sc.id} value={sc.id}>{sc.name}</option>
+              <option key={sc.id} value={sc.id} className="bg-[#0d1527] text-slate-100 py-1 font-mono">
+                {sc.name}
+              </option>
             ))}
           </select>
         </div>

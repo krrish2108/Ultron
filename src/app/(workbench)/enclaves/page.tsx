@@ -243,12 +243,13 @@ export default function EnclavesPage() {
                     <span className="text-xs font-bold text-red-400 flex items-center gap-1"><AlertTriangle className="w-3 h-3"/> {enclave.type}</span>
                     <select 
                       onChange={(e) => updateEnclaveType(i, e.target.value)}
+                      style={{ colorScheme: "dark" }}
                       className="w-full bg-[#0a0a0a] border border-red-500/30 rounded px-2 py-1 text-xs text-white outline-none appearance-none cursor-pointer hover:border-red-500/60"
                       defaultValue=""
                       onClick={e => e.stopPropagation()}
                     >
-                      <option value="" disabled>Select New Type...</option>
-                      {workloadTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                      <option value="" disabled className="bg-[#0b1220] text-slate-400">Select New Type...</option>
+                      {workloadTypes.map(t => <option key={t} value={t} className="bg-[#0b1220] text-slate-100">{t}</option>)}
                     </select>
                   </div>
                 ) : (
@@ -409,10 +410,11 @@ export default function EnclavesPage() {
                     <select 
                       value={newEnclaveType || (workloadTypes[0] || "")}
                       onChange={e => setNewEnclaveType(e.target.value)}
-                      className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#00f0ff]/50 focus:shadow-[0_0_15px_rgba(0,240,255,0.1)] transition-all appearance-none"
+                      style={{ colorScheme: "dark" }}
+                      className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#00f0ff]/50 focus:shadow-[0_0_15px_rgba(0,240,255,0.1)] transition-all appearance-none cursor-pointer"
                     >
-                      {workloadTypes.map(t => <option key={t} value={t}>{t}</option>)}
-                      {workloadTypes.length === 0 && <option value="" disabled>No types available</option>}
+                      {workloadTypes.map(t => <option key={t} value={t} className="bg-[#0b1220] text-slate-100">{t}</option>)}
+                      {workloadTypes.length === 0 && <option value="" disabled className="bg-[#0b1220] text-slate-400">No types available</option>}
                     </select>
                   )}
                 </div>
