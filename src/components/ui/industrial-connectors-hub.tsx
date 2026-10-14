@@ -537,7 +537,7 @@ export function IndustrialConnectorsHub() {
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         {/* Category Pills */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-accent/30 border border-border/60 overflow-x-auto custom-scrollbar">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-accent/30 border border-border/60 overflow-x-auto no-scrollbar">
           {(
             [
               { id: "all", label: "All Connectors" },
@@ -546,19 +546,27 @@ export function IndustrialConnectorsHub() {
               { id: "mcp", label: "MCP Protocols" },
               { id: "storage", label: "Air-Gap Vault" }
             ] as const
-          ).map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveCategory(tab.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
-                activeCategory === tab.id
-                  ? "bg-primary text-black font-semibold shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+          ).map(tab => {
+            const count = tab.id === "all" ? connectors.length : connectors.filter(c => c.category === tab.id).length;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveCategory(tab.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+                  activeCategory === tab.id
+                    ? "bg-primary text-black font-semibold shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/40"
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${
+                  activeCategory === tab.id ? "bg-black/20 text-black font-bold" : "bg-white/10 text-muted-foreground"
+                }`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Search */}
@@ -569,8 +577,17 @@ export function IndustrialConnectorsHub() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search protocol or endpoint..."
-            className="w-full bg-accent/30 border border-border/60 focus:border-primary/60 rounded-xl pl-8 pr-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/50 outline-none transition-colors"
+            className="w-full bg-accent/30 border border-border/60 focus:border-primary/60 rounded-xl pl-8 pr-8 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/50 outline-none transition-colors"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded transition-colors"
+              title="Clear search"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -731,6 +748,27 @@ export function IndustrialConnectorsHub() {
             </div>
           );
         })}
+
+        {/* Empty State */}
+        {filteredConnectors.length === 0 && (
+          <div className="col-span-full flex flex-col items-center justify-center p-8 rounded-xl border border-dashed border-border/80 bg-background/30 text-center">
+            <Search className="w-8 h-8 text-muted-foreground/40 mb-2" />
+            <p className="text-sm font-semibold text-foreground">No connectors found</p>
+            <p className="text-xs text-muted-foreground max-w-sm mt-1 mb-4">
+              {searchQuery ? `No bridges match "${searchQuery}". Try a different keyword.` : "No connectors configured under this category."}
+            </p>
+            <div className="flex gap-2">
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} className="px-3 py-1.5 rounded-lg bg-accent text-xs hover:bg-accent/80 text-foreground transition-colors">
+                  Clear Search
+                </button>
+              )}
+              <button onClick={() => setShowAddModal(true)} className="px-3 py-1.5 rounded-lg bg-primary text-black font-semibold text-xs hover:bg-primary/90 transition-colors">
+                + Add Connector
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Live Tool Execution Result Drawer */}
@@ -816,28 +854,41 @@ export function IndustrialConnectorsHub() {
                     <select
                       value={newConnProtocol}
                       onChange={(e) => {
-                        setNewConnProtocol(e.target.value);
-                        if (e.target.value.includes("OPC-UA")) {
+                        const val = e.target.value;
+                        setNewConnProtocol(val);
+                        if (val.includes("OPC-UA")) {
                           setNewConnEndpoint("opc.tcp://127.0.0.1:4840/UA/Node");
                           setNewConnCategory("scada");
-                        } else if (e.target.value.includes("MQTT")) {
+                        } else if (val.includes("MQTT")) {
                           setNewConnEndpoint("mqtts://localhost:8883/telemetry/#");
                           setNewConnCategory("scada");
-                        } else if (e.target.value.includes("PostgreSQL")) {
+                        } else if (val.includes("PostgreSQL")) {
                           setNewConnEndpoint("postgresql://localhost:5432/historian");
                           setNewConnCategory("historian");
-                        } else if (e.target.value.includes("MCP")) {
+                        } else if (val.includes("MCP")) {
                           setNewConnEndpoint("python -m local_mcp_server");
                           setNewConnCategory("mcp");
+                        } else if (val.includes("Modbus")) {
+                          setNewConnEndpoint("modbus+tcp://192.168.1.100:502/holding_registers");
+                          setNewConnCategory("scada");
+                        } else if (val.includes("REST")) {
+                          setNewConnEndpoint("https://api.internal.local/v1/telemetry");
+                          setNewConnCategory("scada");
+                        } else if (val.includes("WebSocket")) {
+                          setNewConnEndpoint("wss://stream.internal.local/sensors/live");
+                          setNewConnCategory("scada");
                         }
                       }}
-                      className="w-full bg-accent/40 border border-border/80 focus:border-primary rounded-lg px-2.5 py-1.5 text-foreground outline-none"
+                      style={{ colorScheme: "dark" }}
+                      className="w-full bg-[#0d1527] border border-border/80 focus:border-primary rounded-lg px-2.5 py-1.5 text-foreground outline-none text-xs cursor-pointer"
                     >
-                      <option value="OPC-UA Binary (TCP)">OPC-UA Binary</option>
-                      <option value="MQTT v5.0 (mTLS)">MQTT v5.0 (mTLS)</option>
-                      <option value="PostgreSQL / Timescale">PostgreSQL Timescale</option>
-                      <option value="Model Context Protocol (stdio)">MCP stdio (Python)</option>
-                      <option value="Modbus-TCP / IP">Modbus-TCP</option>
+                      <option value="OPC-UA Binary (TCP)" className="bg-[#0d1527] text-slate-100 py-1.5">OPC-UA Binary (TCP)</option>
+                      <option value="MQTT v5.0 (mTLS)" className="bg-[#0d1527] text-slate-100 py-1.5">MQTT v5.0 (mTLS)</option>
+                      <option value="PostgreSQL / Timescale" className="bg-[#0d1527] text-slate-100 py-1.5">PostgreSQL Timescale</option>
+                      <option value="Model Context Protocol (stdio)" className="bg-[#0d1527] text-slate-100 py-1.5">MCP stdio (Python)</option>
+                      <option value="Modbus-TCP / IP" className="bg-[#0d1527] text-slate-100 py-1.5">Modbus-TCP</option>
+                      <option value="Custom REST / Webhook" className="bg-[#0d1527] text-slate-100 py-1.5">REST / Webhook API</option>
+                      <option value="WebSocket Stream" className="bg-[#0d1527] text-slate-100 py-1.5">WebSocket Stream</option>
                     </select>
                   </div>
 
@@ -846,12 +897,13 @@ export function IndustrialConnectorsHub() {
                     <select
                       value={newConnCategory}
                       onChange={(e) => setNewConnCategory(e.target.value as any)}
-                      className="w-full bg-accent/40 border border-border/80 focus:border-primary rounded-lg px-2.5 py-1.5 text-foreground outline-none"
+                      style={{ colorScheme: "dark" }}
+                      className="w-full bg-[#0d1527] border border-border/80 focus:border-primary rounded-lg px-2.5 py-1.5 text-foreground outline-none text-xs cursor-pointer"
                     >
-                      <option value="scada">SCADA & Bus</option>
-                      <option value="historian">Historian DB</option>
-                      <option value="mcp">MCP Protocol</option>
-                      <option value="storage">Air-Gap Vault</option>
+                      <option value="scada" className="bg-[#0d1527] text-slate-100 py-1.5">SCADA & Bus</option>
+                      <option value="historian" className="bg-[#0d1527] text-slate-100 py-1.5">Historian DB</option>
+                      <option value="mcp" className="bg-[#0d1527] text-slate-100 py-1.5">MCP Protocol</option>
+                      <option value="storage" className="bg-[#0d1527] text-slate-100 py-1.5">Air-Gap Vault</option>
                     </select>
                   </div>
                 </div>
@@ -873,11 +925,12 @@ export function IndustrialConnectorsHub() {
                   <select
                     value={newConnIsolation}
                     onChange={(e) => setNewConnIsolation(e.target.value as any)}
-                    className="w-full bg-accent/40 border border-border/80 focus:border-primary rounded-lg px-2.5 py-1.5 text-foreground outline-none"
+                    style={{ colorScheme: "dark" }}
+                    className="w-full bg-[#0d1527] border border-border/80 focus:border-primary rounded-lg px-2.5 py-1.5 text-foreground outline-none text-xs cursor-pointer"
                   >
-                    <option value="L3-Strict-Air-Gap">L3 - Strict Air-Gap (Zero WAN Egress)</option>
-                    <option value="L2-Enclave-VPC">L2 - Enclave VPC Protected</option>
-                    <option value="L1-Local-Loopback">L1 - Local Loopback Only</option>
+                    <option value="L3-Strict-Air-Gap" className="bg-[#0d1527] text-slate-100 py-1.5">L3 - Strict Air-Gap (Zero WAN Egress)</option>
+                    <option value="L2-Enclave-VPC" className="bg-[#0d1527] text-slate-100 py-1.5">L2 - Enclave VPC Protected</option>
+                    <option value="L1-Local-Loopback" className="bg-[#0d1527] text-slate-100 py-1.5">L1 - Local Loopback Only</option>
                   </select>
                 </div>
 
