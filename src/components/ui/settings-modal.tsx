@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/store/useAppStore";
-import { X, Settings, User, Shield, CreditCard, Zap, Brain, Focus, Code, Wrench, Plug, Puzzle, Monitor, Sun, Moon, ChevronDown, Code2, Sparkles } from "lucide-react";
+import { X, Settings, User, Shield, CreditCard, Zap, Brain, Focus, Code, Wrench, Plug, Puzzle, Monitor, Sun, Moon, ChevronDown, Code2, Sparkles, Search } from "lucide-react";
 import { useState, useRef } from "react";
 import { PromptToRegexBuilder } from "@/components/ui/prompt-to-regex-builder";
 import { IndustrialConnectorsHub } from "@/components/ui/industrial-connectors-hub";
@@ -174,6 +174,14 @@ export function SettingsModal() {
   const { isSettingsOpen, setSettingsOpen, userSettings, updateUserSettings } = useAppStore();
   const [activeTab, setActiveTab] = useState("general");
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
+  const [searchNav, setSearchNav] = useState("");
+
+  const filteredSettingsTabs = SETTINGS_TABS.filter(tab => 
+    !searchNav.trim() || tab.label.toLowerCase().includes(searchNav.toLowerCase().trim())
+  );
+  const filteredCustomizeTabs = CUSTOMIZE_TABS.filter(tab => 
+    !searchNav.trim() || tab.label.toLowerCase().includes(searchNav.toLowerCase().trim())
+  );
 
   // Email update state
   const [isEditingEmail, setIsEditingEmail] = useState(false);
@@ -206,73 +214,174 @@ export function SettingsModal() {
           className="relative w-full max-w-[1000px] h-[80vh] min-h-[600px] bg-card border border-border rounded-2xl shadow-2xl flex overflow-hidden z-10 font-sans"
         >
           {/* Sidebar */}
-          <div className="w-[240px] bg-muted/30 border-r border-border p-4 flex flex-col shrink-0 overflow-y-auto custom-scrollbar">
+          <div className="w-[240px] bg-muted/30 border-r border-border p-4 flex flex-col shrink-0 overflow-y-auto custom-scrollbar select-none">
             {/* Search */}
-            <div className="relative mb-6">
+            <div className="relative mb-5">
               <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                <svg className="w-4 h-4 text-muted-foreground/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+                <Search className="w-3.5 h-3.5 text-muted-foreground/60" />
               </div>
               <input 
                 type="text" 
-                placeholder="Search" 
-                className="w-full bg-background border border-border rounded-lg pl-9 pr-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+                value={searchNav}
+                onChange={(e) => setSearchNav(e.target.value)}
+                placeholder="Search settings..." 
+                className="w-full bg-background border border-border rounded-xl pl-9 pr-8 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:border-primary transition-colors"
               />
+              {searchNav && (
+                <button
+                  onClick={() => setSearchNav("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
+                  title="Clear search"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
             </div>
 
-            <div className="space-y-6">
-              <div>
-                <div className="px-3 text-xs font-medium text-muted-foreground mb-2">Settings</div>
-                <nav className="space-y-0.5" onMouseLeave={() => setHoveredTab(null)}>
-                  {SETTINGS_TABS.map(tab => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      onMouseEnter={() => setHoveredTab(tab.id)}
-                      className={`relative w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${activeTab === tab.id ? 'text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
-                    >
-                      {activeTab === tab.id && (
-                        <motion.div layoutId="activeTab" className="absolute inset-0 bg-accent rounded-lg" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
-                      )}
-                      {hoveredTab === tab.id && activeTab !== tab.id && (
-                        <motion.div layoutId="hoverTab" className="absolute inset-0 bg-accent/50 rounded-lg" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
-                      )}
-                      <tab.icon className="w-4 h-4 opacity-70 relative z-10" />
-                      <span className="relative z-10">{tab.label}</span>
-                      {(tab as any).comingSoon && (
-                        <span className="ml-auto text-[8px] uppercase tracking-wider font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded relative z-10">Soon</span>
-                      )}
-                    </button>
-                  ))}
-                </nav>
-              </div>
+            <div className="space-y-6" onMouseLeave={() => setHoveredTab(null)}>
+              {filteredSettingsTabs.length > 0 && (
+                <div>
+                  <div className="px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60 mb-2 select-none">
+                    Settings
+                  </div>
+                  <nav className="space-y-1 relative">
+                    {filteredSettingsTabs.map(tab => {
+                      const isActive = activeTab === tab.id;
+                      const isHovered = hoveredTab === tab.id;
 
-              <div>
-                <div className="px-3 text-xs font-medium text-muted-foreground/70 mb-2">Customize</div>
-                <nav className="space-y-0.5" onMouseLeave={() => setHoveredTab(null)}>
-                  {CUSTOMIZE_TABS.map(tab => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
-                      onMouseEnter={() => setHoveredTab(tab.id)}
-                      className={`relative w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${activeTab === tab.id ? 'text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
-                    >
-                      {activeTab === tab.id && (
-                        <motion.div layoutId="activeTab" className="absolute inset-0 bg-accent rounded-lg" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
-                      )}
-                      {hoveredTab === tab.id && activeTab !== tab.id && (
-                        <motion.div layoutId="hoverTab" className="absolute inset-0 bg-accent/50 rounded-lg" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
-                      )}
-                      <tab.icon className="w-4 h-4 opacity-70 relative z-10" />
-                      <span className="relative z-10">{tab.label}</span>
-                      {(tab as any).comingSoon && (
-                        <span className="ml-auto text-[8px] uppercase tracking-wider font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded relative z-10">Soon</span>
-                      )}
-                    </button>
-                  ))}
-                </nav>
-              </div>
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          onMouseEnter={() => setHoveredTab(tab.id)}
+                          className="group relative w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs transition-all duration-150 select-none cursor-pointer outline-none text-left"
+                        >
+                          {/* Active Glowing Pill */}
+                          {isActive && (
+                            <motion.div
+                              layoutId="settingsNavActive"
+                              className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary/15 via-primary/8 to-transparent border border-primary/30 shadow-[inset_0_0_12px_rgba(0,240,255,0.08),0_0_15px_rgba(0,240,255,0.06)] pointer-events-none"
+                              transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                            />
+                          )}
+
+                          {/* Active Neon Cyan Left Indicator Bar */}
+                          {isActive && (
+                            <motion.div
+                              layoutId="settingsActiveIndicator"
+                              className="absolute left-1 top-2.5 bottom-2.5 w-1 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)] z-20 pointer-events-none"
+                              transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                            />
+                          )}
+
+                          {/* Hover Magnetic Backdrop */}
+                          {isHovered && !isActive && (
+                            <motion.div
+                              layoutId="settingsNavHover"
+                              className="absolute inset-0 rounded-xl bg-white/[0.06] border border-white/[0.08] shadow-[0_2px_10px_rgba(0,0,0,0.2)] pointer-events-none"
+                              transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                            />
+                          )}
+
+                          {/* Icon with Hover Shift */}
+                          <tab.icon className={`w-4 h-4 transition-all duration-200 relative z-10 shrink-0 select-none pointer-events-none ${
+                            isActive 
+                              ? "text-primary scale-110 drop-shadow-[0_0_6px_rgba(0,240,255,0.6)]" 
+                              : "opacity-70 group-hover:opacity-100 group-hover:scale-110 group-hover:text-primary"
+                          }`} />
+
+                          {/* Label Text - never triggers text selection cursor */}
+                          <span className={`relative z-10 select-none pointer-events-none cursor-pointer tracking-wide transition-colors duration-150 ${
+                            isActive 
+                              ? "text-foreground font-semibold" 
+                              : "text-muted-foreground group-hover:text-foreground font-medium"
+                          }`}>
+                            {tab.label}
+                          </span>
+
+                          {(tab as any).comingSoon && (
+                            <span className="ml-auto text-[8px] uppercase tracking-wider font-bold bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded-full relative z-10 select-none pointer-events-none">
+                              Soon
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+              )}
+
+              {filteredCustomizeTabs.length > 0 && (
+                <div>
+                  <div className="px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60 mb-2 select-none">
+                    Customize
+                  </div>
+                  <nav className="space-y-1 relative">
+                    {filteredCustomizeTabs.map(tab => {
+                      const isActive = activeTab === tab.id;
+                      const isHovered = hoveredTab === tab.id;
+
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          onMouseEnter={() => setHoveredTab(tab.id)}
+                          className="group relative w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs transition-all duration-150 select-none cursor-pointer outline-none text-left"
+                        >
+                          {/* Active Glowing Pill */}
+                          {isActive && (
+                            <motion.div
+                              layoutId="settingsNavActive"
+                              className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary/15 via-primary/8 to-transparent border border-primary/30 shadow-[inset_0_0_12px_rgba(0,240,255,0.08),0_0_15px_rgba(0,240,255,0.06)] pointer-events-none"
+                              transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                            />
+                          )}
+
+                          {/* Active Neon Cyan Left Indicator Bar */}
+                          {isActive && (
+                            <motion.div
+                              layoutId="settingsActiveIndicator"
+                              className="absolute left-1 top-2.5 bottom-2.5 w-1 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)] z-20 pointer-events-none"
+                              transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                            />
+                          )}
+
+                          {/* Hover Magnetic Backdrop */}
+                          {isHovered && !isActive && (
+                            <motion.div
+                              layoutId="settingsNavHover"
+                              className="absolute inset-0 rounded-xl bg-white/[0.06] border border-white/[0.08] shadow-[0_2px_10px_rgba(0,0,0,0.2)] pointer-events-none"
+                              transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                            />
+                          )}
+
+                          {/* Icon with Hover Shift */}
+                          <tab.icon className={`w-4 h-4 transition-all duration-200 relative z-10 shrink-0 select-none pointer-events-none ${
+                            isActive 
+                              ? "text-primary scale-110 drop-shadow-[0_0_6px_rgba(0,240,255,0.6)]" 
+                              : "opacity-70 group-hover:opacity-100 group-hover:scale-110 group-hover:text-primary"
+                          }`} />
+
+                          {/* Label Text - never triggers text selection cursor */}
+                          <span className={`relative z-10 select-none pointer-events-none cursor-pointer tracking-wide transition-colors duration-150 ${
+                            isActive 
+                              ? "text-foreground font-semibold" 
+                              : "text-muted-foreground group-hover:text-foreground font-medium"
+                          }`}>
+                            {tab.label}
+                          </span>
+
+                          {(tab as any).comingSoon && (
+                            <span className="ml-auto text-[8px] uppercase tracking-wider font-bold bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded-full relative z-10 select-none pointer-events-none">
+                              Soon
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+              )}
             </div>
           </div>
 

@@ -179,9 +179,27 @@
   }
 
   /* Text elements use standard text selection cursor */
-  .ultron-cursor input[type="text"], .ultron-cursor input[type="password"], .ultron-cursor input[type="email"], .ultron-cursor input[type="number"], .ultron-cursor textarea, .ultron-cursor p, .ultron-cursor h1, .ultron-cursor h2, .ultron-cursor h3, .ultron-cursor h4, .ultron-cursor h5, .ultron-cursor h6, .ultron-cursor span {
+  .ultron-cursor input[type="text"], .ultron-cursor input[type="password"], .ultron-cursor input[type="email"], .ultron-cursor input[type="number"], .ultron-cursor textarea {
     cursor: text !important;
   }
+
+  /* Interactive elements use custom pointer and disable text cursor on inner text/spans */
+  .ultron-cursor button, .ultron-cursor button *,
+  .ultron-cursor a, .ultron-cursor a *,
+  .ultron-cursor select, .ultron-cursor select *,
+  .ultron-cursor [role="button"], .ultron-cursor [role="button"] *,
+  .ultron-cursor label, .ultron-cursor label *,
+  .ultron-cursor nav button, .ultron-cursor nav button * {
+    cursor: url('/cursor.svg') 4 4, pointer !important;
+    user-select: none;
+  }
+
+  /* Default cursor rules when ultron-cursor is off */
+  button, button *, a, a *, [role="button"], [role="button"] *, nav button, nav button * {
+    cursor: pointer;
+    user-select: none;
+  }
+
   html {
     @apply font-sans;
   }
