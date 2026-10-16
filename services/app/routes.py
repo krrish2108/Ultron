@@ -351,3 +351,47 @@ async def execute_skill_endpoint(payload: dict):
     return {"status": "ok", "result": result}
 
 
+# ---------------------------------------------------------
+# Sovereign MCP Plugins Marketplace Endpoints
+# ---------------------------------------------------------
+
+@router.get("/api/plugins")
+async def get_plugins():
+    """Retrieve registered plugins from the backend plugins manager."""
+    from services.agents.plugins_manager import plugins_manager
+    plugins = plugins_manager.get_registered_plugins()
+    return {"status": "ok", "plugins": plugins}
+
+@router.post("/api/plugins/sync")
+async def sync_plugins(payload: dict):
+    """Synchronize plugins registry from the frontend Marketplace."""
+    from services.agents.plugins_manager import plugins_manager
+    plugins = payload.get("plugins", [])
+    plugins_manager.save_registered_plugins(plugins)
+    return {"status": "ok", "synced_count": len(plugins)}
+
+@router.post("/api/plugins/audit")
+async def audit_plugin_endpoint(payload: dict):
+    """
+    Performs real cryptographic handshake & zero-egress audit on an MCP plugin.
+    Broadcasts real-time events to /ws/transparency.
+    """
+    from services.agents.plugins_manager import plugins_manager
+    plugin = payload.get("plugin", payload)
+    audit_res = await plugins_manager.audit_plugin(plugin)
+    return {"status": "ok", "result": audit_res}
+
+@router.post("/api/plugins/execute")
+async def execute_plugin_endpoint(payload: dict):
+    """
+    Executes a tool or operation through an installed MCP plugin bundle.
+    Broadcasts real-time events to /ws/transparency.
+    """
+    from services.agents.plugins_manager import plugins_manager
+    plugin = payload.get("plugin", payload)
+    query = payload.get("query", "query telemetry")
+    result = await plugins_manager.execute_plugin_action(plugin, query)
+    return {"status": "ok", "result": result}
+
+
+
