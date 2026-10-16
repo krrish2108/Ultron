@@ -309,3 +309,45 @@ async def call_mcp_tool(payload: dict):
         
     return {"status": "ok", "result": res}
 
+
+# ---------------------------------------------------------
+# Autonomous Skills Studio Endpoints
+# ---------------------------------------------------------
+
+@router.get("/api/skills")
+async def get_skills():
+    """Retrieve registered skills from the backend skills manager."""
+    from services.agents.skills_manager import skills_manager
+    skills = skills_manager.get_registered_skills()
+    return {"status": "ok", "skills": skills}
+
+@router.post("/api/skills/sync")
+async def sync_skills(payload: dict):
+    """Synchronize skills registry from the frontend Skills Studio."""
+    from services.agents.skills_manager import skills_manager
+    skills = payload.get("skills", [])
+    skills_manager.save_registered_skills(skills)
+    return {"status": "ok", "synced_count": len(skills)}
+
+@router.post("/api/skills/execute")
+async def execute_skill_endpoint(payload: dict):
+    """
+    Executes an autonomous skill against real-time backend telemetry.
+    Supports built-in industrial procedures and custom user-defined skills.
+    Broadcasts real-time events to /ws/transparency.
+    """
+    from services.agents.skills_manager import skills_manager
+    skill = payload.get("skill", payload)
+    input_params = payload.get("input") or payload.get("sample_input") or {}
+    
+    if isinstance(input_params, str):
+        try:
+            import json
+            input_params = json.loads(input_params)
+        except Exception:
+            input_params = {"raw_input": input_params}
+
+    result = await skills_manager.execute_skill(skill, input_params)
+    return {"status": "ok", "result": result}
+
+
